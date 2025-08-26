@@ -1,0 +1,3 @@
+argocd-template-helm:
+  argo-rollout:
+    enabled: true

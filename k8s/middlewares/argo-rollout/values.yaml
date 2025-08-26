@@ -1,0 +1,19 @@
+argo-rollouts:
+  fullnameOverride: argo-rollout
+  controller:
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+
+  dashboard:
+    # -- Deploy dashboard server
+    enabled: true
+
+  resources:
+    limits:
+      memory: 128Mi
+      ephemeral-storage: 1Gi
+    requests:
+      cpu: 50m
+      memory: 64Mi
