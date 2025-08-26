@@ -1,17 +1,36 @@
 argocd-template-helm:
-  argocd-apps:
+  default:
+    spec:
+      project: default
+      syncPolicy:
+        automated:
+          prune: "true"
+          selfHeal: "true"
+          allowEmpty: "true"
+        syncOptions:
+          - Validate=true
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+        retry:
+          limit: 5
+          backoff: 
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+  argoApps:
     argo-rollout:
       appsNameOverride: argo-rollout
-      enabled: false
+      enabled: true
       finalizer: false
       annotations:
         argocd.argoproj.io/sync-wave: "-5"
       spec:
-        project: ops
+        project: default
         source:
-          repoURL: "https://github.com/dromadaire54/test-pos-applicationset.git"
+          repoURL: "https://github.com/dromadaire54/test-poc-applicationset.git"
           path: "./k8s/middlewares/argo-rollout"
-          targetRevision: "main"
+          targetRevision: "master"
           helm:
             releaseName: argo-rollout
         syncPolicy:
