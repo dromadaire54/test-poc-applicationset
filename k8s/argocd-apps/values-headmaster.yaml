@@ -8,7 +8,7 @@ argocd-template-helm:
     spec:
       project: ops
       source:
-        repoURL: "https://github.com/ManakinCubber/tiime-ops.git"
+        repoURL: "https://github.com/dromadaire54/test-pos-applicationset.git"
         path: "./k8s/middlewares/argo-rollout"
         targetRevision: "main"
         helm:
