@@ -1,8 +1,0 @@
-argo-rollouts:
-  serviceAccount:
-    create: true
-    annotations: 
-      eks.amazonaws.com/role-arn: arn:aws:iam::990075099095:role/preprod_argocd_role
-
-
-

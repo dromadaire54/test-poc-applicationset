@@ -1,3 +1,0 @@
-karpenter-crd:
-  webhook:
-    serviceNamespace: karpenter

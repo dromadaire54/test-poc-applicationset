@@ -1,4 +1,0 @@
-prometheus-rds-exporter-chart:
-  serviceAccount:
-    annotations:
-      eks.amazonaws.com/role-arn: arn:aws:iam::284983278621:role/tiime-prod_rds_exporter_role

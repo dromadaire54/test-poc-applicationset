@@ -1,22 +1,5 @@
 argocd-template-helm:
   argoApps:
-    chronos-cleanup-databases:
-      appsNameOverride: chronos-cleanup-databases
-      enabled: false
-      finalizer: true
-      spec:
-        project: ops
-        source:
-          repoURL: "https://github.com/ManakinCubber/tiime-ops.git"
-          path: "./k8s/middlewares/chronos-cleanup-databases"
-          targetRevision: "main"
-          helm:
-            releaseName: chronos-cleanup-databases
-        syncPolicy:
-          automatedEnableDefaultConfig: true
-        destination:
-          namespace: ops
-
     kyverno:
       appsNameOverride: kyverno
       enabled: false
@@ -26,7 +9,7 @@ argocd-template-helm:
       spec:
         project: ops
         source:
-          repoURL: "https://github.com/ManakinCubber/tiime-ops.git"
+          repoURL: "https://github.com/dromadaire54/test-poc-applicationset.git"
           path: "./k8s/middlewares/kyverno"
           targetRevision: "main"
           helm:
@@ -47,7 +30,7 @@ argocd-template-helm:
       spec:
         project: ops
         source:
-          repoURL: "https://github.com/ManakinCubber/tiime-ops.git"
+          repoURL: "https://github.com/dromadaire54/test-poc-applicationset.git"
           path: "./k8s/middlewares/kyverno-policy-reporter"
           targetRevision: "main"
           helm:
