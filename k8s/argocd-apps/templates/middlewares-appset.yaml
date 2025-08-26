@@ -8,18 +8,11 @@ spec:
   goTemplateOptions:
   - missingkey=error
   generators:
-    - matrix:
-        generators:
-        - git:
-            repoURL: https://github.com/dromadaire54/test-poc-applicationset.git
-            revision: master
-            directories:
-            - path: k8s/middlewares/finops/*
-        - git:
-            repoURL: https://github.com/dromadaire54/test-poc-applicationset.git
-            revision: master
-            files:
-            - path: k8s/middlewares/finops/**/config.json
+    - git:
+        repoURL: https://github.com/dromadaire54/test-poc-applicationset.git
+        revision: master
+        directories:
+        - path: k8s/middlewares/finops/*
   template:
     metadata:
       name: '{{ `{{.path.basename}}` }}'
@@ -34,7 +27,6 @@ spec:
           helm:
             valueFiles:
               - "values-prod.yaml"
-              - "secrets://values-prod.yaml"
             ignoreMissingValueFiles: true
       destination:
         namespace: 'argocd'
