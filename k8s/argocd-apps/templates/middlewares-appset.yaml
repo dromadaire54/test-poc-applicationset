@@ -12,12 +12,19 @@ spec:
         generators:
         - git:
             repoURL: https://github.com/dromadaire54/test-poc-applicationset.git
-            revision: main
+            revision: master
             files:
             - path: argocd-apps/values/cluster-preprod/middlewares-config.yaml
         - list:
-            elements: []
             elementsYaml: "{{ `{{ .middlewares | toJson }}` }}"
+  templatePatch: |
+    {{ `
+    {{- if .autosync }}
+    spec:
+     syncPolicy: :
+        automated: {}
+    {{- end }}
+    ` }}
   template:
     metadata:
       name: 'middlewares-tiime-{{ `{{.name}}` }}'
@@ -37,10 +44,3 @@ spec:
       destination:
         namespace: 'argocd'
         server: 'https://kubernetes.default.svc'
-  templatePatch: |
-    {{- if .autosync }}
-    spec:
-     syncPolicy: :
-        automated: {}
-    {{- end }}
----
