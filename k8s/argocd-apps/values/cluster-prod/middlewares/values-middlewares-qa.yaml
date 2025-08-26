@@ -1,0 +1,11 @@
+argocd-template-helm:
+  argoApps:
+    squash-autom:
+      enabled: true
+      spec:
+        source:
+          targetRevision: main
+          helm:
+            valueFiles:
+              - "values-prod.yaml"
+              - "secrets://secrets-prod.yaml"

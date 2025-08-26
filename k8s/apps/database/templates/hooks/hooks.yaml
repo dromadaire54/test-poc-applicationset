@@ -1,0 +1,28 @@
+{{- if hasKey .Values "hooks"}}
+{{- range $name, $hook := .Values.hooks }}
+{{- if $hook.enabled }}
+{{- $hookOptions := printf "%s.%s" "database.hooks.dict" $name -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "database.hooks.name" (dict "release" $.Release.Name "name" $name )}}
+  labels:
+    {{- include "database.hooks.labels" $ | nindent 4 }}
+  annotations:
+    "helm.sh/hook": {{ $hook.execution | default "post-install" }}
+    "helm.sh/hook-weight": {{ $hook.weight | default "3" | quote }}
+    "helm.sh/hook-delete-policy": {{ $hook.deletePolicy | default "before-hook-creation" }}
+spec:
+  template:
+    metadata:
+      name: "database-{{ $name }}-hook"
+      labels:
+        {{- include "tiime-core.selectorLabels" $ | nindent 8 }}
+      annotations:
+        checksum/config: {{ $hook | toString | sha256sum }}
+    spec: 
+      {{- include "tiime-core.database_hook" ((include $hookOptions $) | fromYaml) | nindent 6 }}
+{{- end }}
+---
+{{ end -}}
+{{- end}}

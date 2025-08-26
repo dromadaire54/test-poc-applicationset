@@ -1,0 +1,18 @@
+dora:
+  commonLabels:
+    tiime.tech/product: dora-exporter
+    tiime.tech/team: ops
+    tiime.tech/managed-by: argocd
+
+  replicaCount: 1
+
+  image:
+    repository: 851725266353.dkr.ecr.eu-central-1.amazonaws.com/dora-exporter
+    tag: "latest"
+
+  resources:
+    limits:
+      memory: 128Mi
+    requests:
+      memory: 64Mi
+      cpu: 0.25

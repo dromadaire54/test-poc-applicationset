@@ -1,0 +1,11 @@
+{{- range $i, $dest := (index .Values "k8s-monitoring").destinations }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $dest.type}}-k8s-config
+  namespace: {{ $.Release.Namespace }}
+type: Opaque
+data:
+  host: {{ $dest.url | b64enc }}
+{{ end -}}

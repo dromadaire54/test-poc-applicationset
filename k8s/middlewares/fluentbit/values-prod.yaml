@@ -1,0 +1,39 @@
+fluent-bit:
+  config: # fluentbit config in values-secret-prod.yaml
+  dashboards:
+    enabled: false
+  extraVolumeMounts:
+    - name: custom-luascripts
+      mountPath: /fluent-bit/scripts
+  extraVolumes:
+    - name: custom-luascripts
+      configMap:
+        name: custom-luascripts
+  prometheusRule:
+    enabled: true
+    rules:
+    - alert: DropInOutputBytesProcessed
+      annotations:
+        message: |
+          Fluent Bit instance output plugin processed
+          bytes have drop of 70% for at least 15 minutes.
+        summary: Drop In Output Bytes Processed
+      expr: (-100 * sum(rate(fluentbit_output_proc_bytes_total[2m])) / sum(rate(fluentbit_output_proc_bytes_total[5m])))
+        > 70
+      for: 15m
+      labels:
+        severity: critical
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 768Mi
+    requests:
+      cpu: 100m
+      memory: 512Mi
+  serviceMonitor:
+    enabled: true
+  tolerations:
+  - effect: NoExecute
+    operator: Exists
+  - effect: NoSchedule
+    operator: Exists

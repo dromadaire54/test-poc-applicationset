@@ -1,0 +1,186 @@
+jupyterhub:
+  hub:
+    nodeSelector:
+      karpenter.sh/nodepool: common-no-consolidate-workday
+    allowNamedServers: true
+    db:
+      pvc:
+        storage: 50Gi
+        storageClassName: gp3
+    config:
+      GitHubOAuthenticator:
+        allowed_organizations:
+          - ManakinCubber:Data-Science
+          - ManakinCubber:Devops
+        scope:
+          - read:org
+      JupyterHub:
+        authenticator_class: github
+        admin_access: true
+        admin_users:
+          - ligol
+      KubeSpawner:
+        container_security_context:
+          runAsUser: 0
+          runAsGroup: 0
+    resources:
+      limits:
+        memory: 150Mi
+      requests:
+        memory: 150Mi
+        cpu: 100m
+  prePuller:
+    hook:
+      enabled: false
+    continuous:
+      # NOTE: if used with a karpenter, also add user-placeholders
+      enabled: false
+
+  proxy:
+    chp:
+      nodeSelector:
+        karpenter.sh/nodepool: common-no-consolidate-workday
+      resources:
+        limits:
+          memory: 30Mi
+        requests:
+          memory: 30Mi
+          cpu: 100m
+    service:
+      type: ClusterIP
+
+  ingress:
+    enabled: true
+    hosts:
+      - jupyterhub.preprod.tiime.tech
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod-dns01
+      kubernetes.io/ingress.class: nginx
+      nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    tls:
+    - hosts:
+        - jupyterhub.preprod.tiime.tech
+      secretName: jupyterhub
+
+  # Optimizations configured according to this doc https://z2jh.jupyter.org/en/latest/administrator/optimization.html
+  scheduling:
+    corePods:
+      tolerations:
+        - key: "tiime.tech/consolidate"
+          operator: "Equal"
+          value: "common-no-consolidate-workday"
+          effect: "NoSchedule"
+    userScheduler:
+      nodeSelector:
+        karpenter.sh/nodepool: common-no-consolidate-workday
+      enabled: true
+      resources:
+        limits:
+          memory: 350Mi
+        requests:
+          cpu: 100m
+          memory: 200Mi
+    podPriority:
+      enabled: true
+    userPlaceholder:
+      enabled: false
+
+
+  cull:
+    enabled: true
+    timeout: 3600
+
+  singleuser:
+    cpu:
+      limit: 32
+      guarantee: 1
+    memory:
+      limit: 128G
+      guarantee: 16G
+    startTimeout: 1200 # 20 mins to spin up a notebook server for GPU including the image pull
+    allowPrivilegeEscalation: true
+    storage:
+      capacity: 200Gi
+    cmd:
+      - jupyterhub-singleuser
+      - "--allow-root"
+    profileList:
+      - display_name: Data Engineering (Jupyter node)
+        description: "Notebooks in jupyter node pool"
+        profile_options:
+          image:
+            display_name: "Image"
+            choices:
+              tensorflow:
+                display_name: "Tensorflow 2.16.2 + Python 3.11"
+                kubespawner_override:
+                  image: quay.io/jupyter/tensorflow-notebook:tensorflow-2.16.2
+              datascience-tensorflow:
+                display_name: "Data + Tensorflow 2.16.2 + Python 3.11"
+                kubespawner_override:
+                  image: 851725266353.dkr.ecr.eu-central-1.amazonaws.com/data-science-jupyter-docker:tensorflow
+              datascience-pytorch:
+                display_name: "Data + PyTorch 2.4.1 + Python 3.11"
+                kubespawner_override:
+                  image: 851725266353.dkr.ecr.eu-central-1.amazonaws.com/data-science-jupyter-docker:pytorch
+              pytorch:
+                display_name: "PyTorch 2.4.1 + Python 3.11"
+                kubespawner_override:
+                  image: quay.io/jupyter/pytorch-notebook:pytorch-2.4.1
+        kubespawner_override:
+          node_affinity_required:
+            - matchExpressions:
+              - key: dedicated
+                operator: In
+                values:
+                - jupyter-hub
+          tolerations:
+          - key: "dedicated"
+            operator: "Equal"
+            value: "jupyter-hub"
+            effect: "NoSchedule"
+        cmd: null
+
+      - display_name: Data Engineering (GPU)
+        description: "Notebooks in GPU node pool"
+        profile_options:
+          image:
+            display_name: "Image"
+            choices:
+              tensorflow:
+                display_name: "Tensorflow 2.16.2 + Python 3.11"
+                kubespawner_override:
+                  image: quay.io/jupyter/tensorflow-notebook:cuda-tensorflow-2.16.2
+              pytorch:
+                display_name: "PyTorch 2.4.1 + Python 3.11"
+                kubespawner_override:
+                  image: quay.io/jupyter/pytorch-notebook:cuda12-pytorch-2.4.1
+        kubespawner_override:
+          node_affinity_required:
+            - matchExpressions:
+              - key: dedicated
+                operator: In
+                values:
+                - jupyter-hub-gpu
+          tolerations:
+          - key: "dedicated"
+            operator: "Equal"
+            value: "jupyter-hub-gpu"
+            effect: "NoSchedule"
+        cmd: null
+
+      - display_name: Data Engineering (Common)
+        description: "Notebooks in common node pool"
+        profile_options:
+          image:
+            display_name: "Image"
+            choices:
+              tensorflow:
+                display_name: "Tensorflow 2.16.2 + Python 3.11"
+                kubespawner_override:
+                  image: quay.io/jupyter/tensorflow-notebook:tensorflow-2.16.2
+              pytorch:
+                display_name: "PyTorch 2.4.1 + Python 3.11"
+                kubespawner_override:
+                  image: quay.io/jupyter/pytorch-notebook:pytorch-2.4.1
+        cmd: null

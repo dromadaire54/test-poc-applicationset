@@ -1,0 +1,211 @@
+argocd-template-helm:
+  argoProjects:
+    chronosProject:
+      projectsNameOverride: chronos
+      enabled: false
+      finalizer: true
+      spec:
+        description: Chronos project
+        sourceRepos:
+          - https://github.com/ManakinCubber/chronos-api
+          - https://github.com/ManakinCubber/subscription-manager
+          - https://github.com/ManakinCubber/authorization-server
+          - https://github.com/ManakinCubber/gem
+          - https://github.com/ManakinCubber/base-tiers-api
+          - https://github.com/ManakinCubber/jirhub
+          - 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+        clusterResourceWhitelist:
+          - group: ""
+            kind: Namespace
+          - group: ""
+            kind: PersistentVolume
+        namespacesList:
+          - chronos-*
+          - subscription-manager-*
+          - gem-*
+          - base-tiers-api
+          - jirhub
+          - authorization-server
+          - hermes-*
+          - loki-archive
+
+    dataAnalyticsProject:
+      projectsNameOverride: data-analytics
+      enabled: false
+      finalizer: true
+      spec:
+        description: Data analytics project
+        sourceRepos:
+          - https://github.com/ManakinCubber/analytics-appfollow
+          - https://github.com/ManakinCubber/analytics-tableau
+          - https://github.com/ManakinCubber/data-analytics
+          - https://github.com/ManakinCubber/tiime-ops
+          - https://github.com/ManakinCubber/miscellaneous-services
+          - 284983278621.dkr.ecr.eu-central-1.amazonaws.com
+          - 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+        clusterResourceWhitelist:
+          - group: ""
+            kind: Namespace
+        namespacesList:
+          - data-*
+          - miscellaneous-*
+
+    dataEngineeringProject:
+      projectsNameOverride: data-engineering
+      enabled: false
+      finalizer: true
+      spec:
+        description: Data engineering project
+        sourceRepos:
+          - 284983278621.dkr.ecr.eu-central-1.amazonaws.com
+          - 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+          - https://github.com/ManakinCubber/tiime-ops
+          - https://github.com/ManakinCubber/data-lakehouse
+
+    dataProject:
+      projectsNameOverride: data
+      enabled: false
+      finalizer: true
+      spec:
+        description: Data project
+        sourceRepos:
+          - https://github.com/ManakinCubber/analytics-appfollow
+          - https://github.com/ManakinCubber/analytics-tableau
+          - https://github.com/ManakinCubber/data-analytics
+          - https://github.com/ManakinCubber/data-science
+          - https://github.com/ManakinCubber/tiime-ops
+          - https://github.com/ManakinCubber/miscellaneous-services
+          - 284983278621.dkr.ecr.eu-central-1.amazonaws.com
+          - 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+        clusterResourceWhitelist:
+          - group: ""
+            kind: Namespace
+        namespacesList:
+          - data-*
+          - ds-*
+          - miscellaneous-*
+          - loki-archive
+
+    dataScienceProject:
+      projectsNameOverride: data-science
+      enabled: false
+      finalizer: true
+      spec:
+        description: Data science project
+        sourceRepos:
+          - https://github.com/ManakinCubber/data-science
+          - https://github.com/ManakinCubber/tiime-ops
+          - 284983278621.dkr.ecr.eu-central-1.amazonaws.com
+          - 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+        clusterResourceWhitelist:
+          - group: ""
+            kind: Namespace
+        namespacesList:
+          - ds-*
+          - loki-archive
+
+    hubProject:
+      projectsNameOverride: hub
+      enabled: false
+      finalizer: true
+      spec:
+        description: Tiime Hub project
+        sourceRepos:
+          - https://github.com/ManakinCubber/tiime-hub
+          - https://github.com/ManakinCubber/tiime-hub-php
+          - 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+        clusterResourceWhitelist:
+          - group: ""
+            kind: Namespace
+        namespacesList:
+          - tiime-hub-*
+          - hub-*
+          - loki-archive
+
+    opsProject:
+      projectsNameOverride: ops
+      enabled: false
+      finalizer: true
+      spec:
+        description: OPS project
+        sourceRepos:
+          - https://github.com/ManakinCubber/tiime-ops
+          - https://pmint93.github.io/helm-charts
+          - https://manakincubber.github.io/uptimerobot-operator/helm
+          - https://charts.apiseven.com
+          - registry-1.docker.io/bitnamicharts
+          - https://github.com/ManakinCubber/miscellaneous-services
+          - 284983278621.dkr.ecr.eu-central-1.amazonaws.com
+          - https://github.com/ManakinCubber/calculator-hmac-synchro-jira-veracode
+          - public.ecr.aws/qonto/
+          - 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+          - public.ecr.aws/emr-on-eks/
+          - https://labbs.github.io/
+        clusterResourceWhitelist:
+          - group: "*"
+            kind: "*"
+
+    qaProject:
+      projectsNameOverride: qa
+      enabled: false
+      finalizer: true
+      spec:
+        description: QA project
+        sourceRepos:
+          - https://github.com/ManakinCubber/tiime-ops
+          - https://github.com/ManakinCubber/chronos-mockoon.git
+          - 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+        clusterResourceWhitelist:
+          - group: ""
+            kind: Namespace
+        destinations:
+          - namespace: qa
+            server: https://kubernetes.default.svc
+
+    webProject:
+      projectsNameOverride: web
+      enabled: false
+      finalizer: true
+      spec:
+        description: Web project
+        sourceRepos:
+          - https://github.com/ManakinCubber/tiime-ops
+          - https://github.com/ManakinCubber/tiime-expert-web
+          - https://github.com/ManakinCubber/tiime-legal-web
+          - https://github.com/ManakinCubber/tiime-data-web
+          - https://github.com/ManakinCubber/chronos-web
+          - 284983278621.dkr.ecr.eu-central-1.amazonaws.com
+          - https://github.com/ManakinCubber/tiime-front-plugin
+          - https://github.com/ManakinCubber/tiime-business-onboarding
+          - https://github.com/ManakinCubber/tiime-care
+          - https://github.com/ManakinCubber/tiime-onboarding-form
+          - https://github.com/ManakinCubber/tiime-sign-v2
+          - https://github.com/ManakinCubber/tiime-desk-web
+        clusterResourceWhitelist:
+          - group: ""
+            kind: Namespace
+          - group: ""
+            kind: PersistentVolume
+        destinations:
+          - namespace: web
+            server: https://kubernetes.default.svc
+
+    llmProject:
+      projectsNameOverride: llm
+      enabled: false
+      finalizer: true
+      spec:
+        description: Tiime LLM project
+        sourceRepos:
+          - 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+          - https://github.com/ManakinCubber/tiime-ops
+          - https://github.com/ManakinCubber/llm
+          - https://github.com/ManakinCubber/llm-chat-demo
+          - 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+        clusterResourceWhitelist:
+          - group: ""
+            kind: Namespace
+        namespacesList:
+          - llm-*
+          - loki-archive
+

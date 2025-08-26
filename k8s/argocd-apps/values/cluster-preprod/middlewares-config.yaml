@@ -1,0 +1,7 @@
+middlewares:
+  - name: finops
+    autosync: "true"
+  - name: observability
+    autosync: "true"
+  - name: scaling
+    autosync: "true"

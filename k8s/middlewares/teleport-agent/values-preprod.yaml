@@ -1,0 +1,250 @@
+teleport-kube-agent:
+  annotations:
+    serviceAccount:
+      eks.amazonaws.com/role-arn: arn:aws:iam::990075099095:role/preprod_teleport_role
+  apps:
+  - labels:
+      env: review
+    name: rabbitmq-debug
+    uri: http://rabbitmq.chronos-debug.svc.cluster.local:15672
+  - labels:
+      env: review
+    name: rabbitmq-development
+    uri: http://rabbitmq.chronos-development.svc.cluster.local:15672
+  - labels:
+      env: review
+    name: rabbitmq-review-blue
+    uri: http://rabbitmq.chronos-review-blue.svc.cluster.local:15672
+  - labels:
+      env: review
+    name: rabbitmq-review-green
+    uri: http://rabbitmq.chronos-review-green.svc.cluster.local:15672
+  - labels:
+      env: review
+    name: rabbitmq-review-grey
+    uri: http://rabbitmq.chronos-review-grey.svc.cluster.local:15672
+  - labels:
+      env: review
+    name: rabbitmq-review-orange
+    uri: http://rabbitmq.chronos-review-orange.svc.cluster.local:15672
+  - labels:
+      env: review
+    name: rabbitmq-review-pink
+    uri: http://rabbitmq.chronos-review-pink.svc.cluster.local:15672
+  - labels:
+      env: review
+    name: rabbitmq-review-yellow
+    uri: http://rabbitmq.chronos-review-yellow.svc.cluster.local:15672
+  - labels:
+      env: review
+    name: rabbitmq-review-purple
+    uri: http://rabbitmq.chronos-review-purple.svc.cluster.local:15672
+  - labels:
+      env: review
+    name: rabbitmq-review-red
+    uri: http://rabbitmq.chronos-review-red.svc.cluster.local:15672
+  - labels:
+      env: review
+    name: rabbitmq-testing
+    uri: http://rabbitmq.chronos-testing.svc.cluster.local:15672
+  - labels:
+      env: review
+    name: rabbitmq-review-black
+    uri: http://rabbitmq.chronos-review-black.svc.cluster.local:15672
+  - labels:
+      env: review
+    name: rabbitmq-review-white
+    uri: http://rabbitmq.chronos-review-white.svc.cluster.local:15672
+  - labels:
+      env: review
+    name: rabbitmq-review-teal
+    uri: http://rabbitmq.chronos-review-teal.svc.cluster.local:15672
+  - labels:
+      env: review
+    name: rabbitmq-review-brown
+    uri: http://rabbitmq.chronos-review-brown.svc.cluster.local:15672
+  - labels:
+      env: review
+    name: rabbitmq-review-indigo
+    uri: http://rabbitmq.chronos-review-indigo.svc.cluster.local:15672
+  - labels:
+      env: review
+    name: rabbitmq-review-onyx
+    uri: http://rabbitmq.chronos-review-onyx.svc.cluster.local:15672
+  - labels:
+      env: review
+    name: rabbitmq-review-cinereous
+    uri: http://rabbitmq.chronos-review-cinereous.svc.cluster.local:15672
+  - labels:
+      env: review
+    name: rabbitmq-review-lavender
+    uri: http://rabbitmq.chronos-review-lavender.svc.cluster.local:15672
+  - labels:
+      env: review
+    name: rabbitmq-review-amaranth
+    uri: http://rabbitmq.chronos-review-amaranth.svc.cluster.local:15672
+  - labels:
+      env: review
+    name: rabbitmq-review-cerfrance
+    uri: http://rabbitmq.chronos-review-cerfrance.svc.cluster.local:15672
+  - labels:
+      env: review
+    name: rabbitmq-staging
+    uri: http://rabbitmq.chronos-staging.svc.cluster.local:15672
+  - labels:
+      env: review
+    name: rabbitmq-review-leafy
+    uri: http://rabbitmq.chronos-review-leafy.svc.cluster.local:15672
+  - labels:
+      env: review
+    name: rabbitmq-review-pistachio
+    uri: http://rabbitmq.chronos-review-pistachio.svc.cluster.local:15672
+  - labels:
+      env: review
+    name: redis-debug
+    uri: http://redis-ui.chronos-debug.svc.cluster.local:7843
+  - labels:
+      env: review
+    name: redis-development
+    uri: http://redis-ui.chronos-development.svc.cluster.local:7843
+  - labels:
+      env: review
+    name: redis-review-blue
+    uri: http://redis-ui.chronos-review-blue.svc.cluster.local:7843
+  - labels:
+      env: review
+    name: redis-review-green
+    uri: http://redis-ui.chronos-review-green.svc.cluster.local:7843
+  - labels:
+      env: review
+    name: redis-review-grey
+    uri: http://redis-ui.chronos-review-grey.svc.cluster.local:7843
+  - labels:
+      env: review
+    name: redis-review-orange
+    uri: http://redis-ui.chronos-review-orange.svc.cluster.local:7843
+  - labels:
+      env: review
+    name: redis-review-pink
+    uri: http://redis-ui.chronos-review-pink.svc.cluster.local:7843
+  - labels:
+      env: review
+    name: redis-review-yellow
+    uri: http://redis-ui.chronos-review-yellow.svc.cluster.local:7843
+  - labels:
+      env: review
+    name: redis-review-purple
+    uri: http://redis-ui.chronos-review-purple.svc.cluster.local:7843
+  - labels:
+      env: review
+    name: redis-review-red
+    uri: http://redis-ui.chronos-review-red.svc.cluster.local:7843
+  - labels:
+      env: review
+    name: redis-testing
+    uri: http://redis-ui.chronos-testing.svc.cluster.local:7843
+  - labels:
+      env: review
+    name: redis-review-black
+    uri: http://redis-ui.chronos-review-black.svc.cluster.local:7843
+  - labels:
+      env: review
+    name: redis-review-white
+    uri: http://redis-ui.chronos-review-white.svc.cluster.local:7843
+  - labels:
+      env: review
+    name: redis-review-teal
+    uri: http://redis-ui.chronos-review-teal.svc.cluster.local:7843
+  - labels:
+      env: review
+    name: redis-review-brown
+    uri: http://redis-ui.chronos-review-brown.svc.cluster.local:7843
+  - labels:
+      env: review
+    name: redis-review-indigo
+    uri: http://redis-ui.chronos-review-indigo.svc.cluster.local:7843
+  - labels:
+      env: review
+    name: redis-review-onyx
+    uri: http://redis-ui.chronos-review-onyx.svc.cluster.local:7843
+  - labels:
+      env: review
+    name: redis-review-cinereous
+    uri: http://redis-ui.chronos-review-cinereous.svc.cluster.local:7843
+  - labels:
+      env: review
+    name: redis-review-lavender
+    uri: http://redis-ui.chronos-review-lavender.svc.cluster.local:7843
+  - labels:
+      env: review
+    name: redis-review-amaranth
+    uri: http://redis-ui.chronos-review-amaranth.svc.cluster.local:7843
+  - labels:
+      env: review
+    name: redis-review-cerfrance
+    uri: http://redis-ui.chronos-review-cerfrance.svc.cluster.local:7843
+  - labels:
+      env: review
+    name: redis-staging
+    uri: http://redis-ui.chronos-staging.svc.cluster.local:7843
+  - labels:
+      env: review
+    name: redis-review-leafy
+    uri: http://redis-ui.chronos-review-leafy.svc.cluster.local:7843
+  - labels:
+      env: preprod
+    name: argo-rollout-preprod
+    uri: http://argo-rollout-dashboard.argo-rollout.svc.cluster.local:3100
+  - labels:
+      env: preprod
+    name: kubecost-preprod
+    uri: http://kubecost-cost-analyzer.kubecost.svc.cluster.local:9090
+  awsDatabases:
+  - regions:
+    - eu-west-1
+    - eu-central-1
+    tags:
+      '*': '*'
+    types:
+    - rds
+  highAvailability:
+    replicaCount: 2
+  insecureSkipProxyTLSVerify: true
+  joinParams:
+    method: token
+  kubeClusterName: tiime-preprod
+  labels:
+    name: tiime-preprod
+    region: eu-west-1
+  log:
+    format: json
+  podSecurityPolicy:
+    enabled: false
+  proxyAddr: teleport.tiime.tech:443
+  roles: db,kube,app
+
+security-template-helm:
+  networkPolicies:
+    - name: teleport-agent-preprod-network-policy
+      enabled: true
+      egress:
+        rules:
+          # -- Access all resources
+          - {}
+
+      ingress:
+        rules:
+          # -- Allow all pods in the same namespace
+          - from:
+              - podSelector: {}
+          # -- Allow the ingress port and the app port 3000 from outside
+          - from:
+              - ipBlock:
+                  cidr: 0.0.0.0/0
+            ports:
+              # -- https
+              - port: 443
+                protocol: TCP
+              # -- app port
+              - port: 3000
+                protocol: TCP

@@ -1,0 +1,131 @@
+aws:
+  prod:
+    registry: 284983278621.dkr.ecr.eu-central-1.amazonaws.com
+  shared:
+    registry: 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+argo-cd:
+  global:
+    networkPolicy:
+      create: true
+    tolerations:
+      - key: "tiime.tech/karpenter-managed"
+        operator: "Exists"
+        effect: "NoSchedule"
+      - key: "tiime.tech/argocd-dedicated"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+    affinity:
+      nodeAffinity:
+        type: "hard"
+        matchExpressions:
+          - key: karpenter.sh/registered
+            operator: DoesNotExist
+          - key: tiime.tech/argocd-dedicated
+            operator: In
+            values:
+              - "true"
+  configs:
+    params: 
+      controller.resource.health.persist: true
+    cm:
+      statusbadge.enabled: "true"
+      statusbadge.url: "https://argo.preprod.tiime.tech/"
+      accounts.image-updater: apiKey
+      dex.config: |
+        connectors:
+          - type: github
+            id: github
+            name: GitHub
+            config:
+              clientID: $clientID
+              clientSecret: $clientSecret
+              orgs:
+              - name: ManakinCubber
+      helm.valuesFileSchemes:
+        secrets+gpg-import, secrets+gpg-import-kubernetes, secrets+age-import,
+        secrets+age-import-kubernetes, secrets, https
+      url: https://argo.preprod.tiime.tech
+      exec.enabled: true
+    secret:
+      argocdServerAdminPassword: $2a$10$lePg6nwoijKXSHfkG2Pbduwg0F/n5oo5CyYoPiISBLfYVkiXznI02
+  applicationSet:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        memory: 128Mi
+  controller:
+    resources:
+      requests:
+        cpu: 5
+        memory: 24Gi
+      limits:
+        memory: 24Gi
+  dex:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 64Mi
+  notifications:
+    resources:
+      limits:
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+  redis:
+    resources:
+      limits:
+        memory: 128Mi
+      requests:
+        cpu: 200m
+        memory: 128Mi
+  repoServer:
+    resources:
+      limits:
+        memory: 1Gi
+      requests:
+        cpu: 500m
+        memory: 500Mi
+    serviceAccount:
+      annotations:
+        eks.amazonaws.com/role-arn: arn:aws:iam::990075099095:role/preprod_argocd_role
+  server:
+    resources:
+      limits:
+        memory: 512Mi
+      requests:
+        cpu: 500m
+        memory: 512Mi
+    certificate:
+      additionalHosts: []
+      domain: argo.preprod.tiime.tech
+      enabled: true
+      issuer:
+        kind: ClusterIssuer
+        name: letsencrypt-prod
+      secretName: argocd-server-tls
+    ingress:
+      enabled: true
+      # Implemented in argocd v6. may be usefull to configure behind the AWS WAF
+      # controller: aws
+      # annotations:
+      #   alb.ingress.kubernetes.io/backend-protocol: HTTPS
+      #   alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+      # aws:
+      #   backendProtocolVersion: HTTP2
+      #   serviceType: NodePort
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-prod
+        kubernetes.io/ingress.class: nginx
+        nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+        nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+      hostname: argo.preprod.tiime.tech
+      tls: true
+    serviceAccount:
+      annotations:
+        eks.amazonaws.com/role-arn: arn:aws:iam::990075099095:role/preprod_argocd_role

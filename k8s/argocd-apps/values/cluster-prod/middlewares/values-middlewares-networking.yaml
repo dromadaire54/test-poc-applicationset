@@ -1,0 +1,12 @@
+argocd-template-helm:
+  argoApps:
+    coredns:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values.yaml"
+              - "values-prod.yaml"
+        syncPolicy:
+          automatedEnableDefaultConfig: false

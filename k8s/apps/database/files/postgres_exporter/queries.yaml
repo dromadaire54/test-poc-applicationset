@@ -1,0 +1,123 @@
+# https://qonto.github.io/database-monitoring-framework/latest/tutorials/postgresql/exporter-deployment/
+---
+pg_postmaster:
+  query: |
+    SELECT pg_postmaster_start_time as start_time_seconds
+    FROM pg_postmaster_start_time();
+  master: true
+  metrics:
+    - start_time_seconds:
+        usage: "GAUGE"
+        description: "Time at which postmaster started"
+
+pg_replication_slots:
+  query: |
+    SELECT
+        slot_name,
+        database,
+        active,
+        slot_type,
+        xmin,
+        pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn) as replication_lag,
+        pg_wal_lsn_diff(pg_current_wal_lsn(), confirmed_flush_lsn) as confirmed_lag,
+        CASE
+            WHEN safe_wal_size IS NOT NULL
+                THEN (select (safe_wal_size / 1024 / 1024) * 100 / (setting::int) from pg_settings where name = 'max_slot_wal_keep_size')
+            else
+                100
+        END as available_storage_percent
+    FROM pg_replication_slots;
+  master: true
+  metrics:
+    - slot_name:
+        usage: "LABEL"
+        description: "Name of the replication slot"
+    - database:
+        usage: "LABEL"
+        description: "Name of the database"
+    - active:
+        usage: "GAUGE"
+        description: "Flag indicating if the slot is active"
+    - slot_type:
+        usage: "LABEL"
+        description: "The slot type: physical or logical"
+    - xmin:
+        usage: "GAUGE"
+        description: "The oldest transaction that this slot needs the database to retain. VACUUM cannot remove tuples deleted by any later transaction."
+    - replication_lag:
+        usage: "GAUGE"
+        description: "Replication lag in bytes"
+    - confirmed_lag:
+        usage: "GAUGE"
+        description: "Replication confirmed lag in bytes"
+    - available_storage_percent:
+        usage: "GAUGE"
+        description: "Available storage regarding max_slot_wal_keep_size in percent"
+
+pg_stat_user_indexes:
+  query: |
+    SELECT current_database() datname, us.schemaname, us.relname, us.indexrelname, us.idx_scan, us.idx_tup_read, us.idx_tup_fetch, io.idx_blks_read, io.idx_blks_hit, ind.indisvalid
+    FROM pg_index as ind, pg_stat_user_indexes as us, pg_statio_user_indexes as io
+    WHERE ind.indexrelid = us.indexrelid
+    AND ind.indexrelid = io.indexrelid;
+  master: false # This query need to be executed per database to resolve relname (relid::regclass)
+  metrics:
+    - datname:
+        usage: "LABEL"
+        description: "Name of current database"
+    - schemaname:
+        usage: "LABEL"
+        description: "Name of the schema that this table is in"
+    - relname:
+        usage: "LABEL"
+        description: "Name of this table"
+    - indexrelname:
+        usage: "LABEL"
+        description: "Name of this index"
+    - idx_scan:
+        usage: "COUNTER"
+        description: "Number of index scans initiated on this index"
+    - idx_tup_read:
+        usage: "COUNTER"
+        description: "Number of index entries returned by scans on this index"
+    - idx_tup_fetch:
+        usage: "COUNTER"
+        description: "Number of live table rows fetched by simple index scans using this index"
+    - idx_blks_read:
+        usage: "COUNTER"
+        description: "Number of disk blocks read from this index"
+    - idx_blks_hit:
+        usage: "COUNTER"
+        description: "Number of buffer hits in this index"
+    - indisvalid:
+        usage: "LABEL"
+        description: "If true, the index is currently valid for queries. False means the index is possibly incomplete: it must still be modified by INSERT/UPDATE operations, but it cannot safely be used for queries"
+
+# Collect pid, usename and datname information of long running queries
+pg_active_backend:
+  query: |
+    SELECT
+        pid,
+        usename,
+        datname,
+        EXTRACT('minutes' FROM  now() - state_change) AS duration_minutes
+    FROM
+        pg_stat_activity
+    WHERE
+        state = 'active'
+        AND backend_type != 'walsender'
+        AND EXTRACT('minutes' FROM  now() - state_change) > 5;
+  master: true
+  metrics:
+    - usename:
+        usage: "LABEL"
+        description: "PostgreSQL username"
+    - datname:
+        usage: "LABEL"
+        description: "PostgreSQL database"
+    - pid:
+        usage: "LABEL"
+        description: "Backend pid"
+    - duration_minutes:
+        usage: "GAUGE"
+        description: "Query duration"

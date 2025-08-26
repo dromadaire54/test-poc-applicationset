@@ -1,0 +1,9 @@
+apiVersion: v2
+name: argocd
+type: application
+version: 1.0.0 # Parent Chart version is not used
+appVersion: "1.0.0" # Parent Chart appVersion is not used 
+dependencies:
+  - name: argo-cd
+    version: "8.3.0"
+    repository: https://argoproj.github.io/argo-helm

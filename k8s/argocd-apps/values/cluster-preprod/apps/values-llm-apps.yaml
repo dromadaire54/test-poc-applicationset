@@ -1,0 +1,108 @@
+argocd-template-helm:
+  default:
+    spec:
+      project: llm
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+
+  argoApps:
+    copilot-front-preprod:
+      enabled: true
+      finalizer: true
+      appsNameOverride: copilot-front-preprod
+      spec:
+        source:
+          chart: copilot-frontend-helm
+          repoURL: 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+          targetRevision: ">=1.0.0-rc < 1.0.0-rc.x"
+          helm:
+            releaseName: copilot-frontend-preprod 
+            parameters:
+            - name: environmentName
+              value: preprod
+            ignoreMissingValueFiles: true
+            valueFiles:
+              - values.yaml
+              - values-preprod.yaml
+              - secrets://environments/preprod/secrets.yaml
+              - environments/preprod/configs.yaml
+        destination:
+          namespace: llm-copilot-frontend-preprod
+
+    copilot-back-preprod:
+      enabled: true
+      finalizer: true
+      appsNameOverride: copilot-back-preprod
+      spec:
+        source:
+          chart: copilot-backend-helm
+          repoURL: 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+          targetRevision: ">=1.0.0-rc < 1.0.0-rc.x"
+          helm:
+            releaseName: copilot-backend-preprod 
+            parameters:
+            - name: environmentName
+              value: preprod
+            ignoreMissingValueFiles: true
+            valueFiles:
+              - values.yaml
+              - values-preprod.yaml
+              - secrets://environments/preprod/secrets.yaml
+              - environments/preprod/configs.yaml
+        destination:
+          namespace: llm-copilot-backend-preprod
+
+    llm-preprod:
+      enabled: true
+      finalizer: true
+      appsNameOverride: llm-preprod
+      spec:
+        source:
+          repoURL: 'https://github.com/ManakinCubber/llm.git'
+          path: k8s
+          targetRevision: develop
+          helm:
+            valueFiles:
+              - secrets://environments/development/secrets.yaml
+              - environments/development/values.yaml
+        destination:
+          namespace: llm-preprod
+
+    llm-chat-demo-preprod:
+      enabled: true
+      finalizer: true
+      appsNameOverride: llm-chat-demo-preprod
+      spec:
+        source:
+          repoURL: 'https://github.com/ManakinCubber/llm-chat-demo.git'
+          path: k8s
+          targetRevision: develop
+          helm:
+            valueFiles:
+              - secrets://environments/development/secrets.yaml
+              - environments/development/values.yaml
+        destination:
+          namespace: llm-preprod
+
+    deepseek:
+      enabled: false
+      finalizer: true
+      appsNameOverride: deepseek
+      spec:
+        source:
+          chart: deepseek-helm
+          repoURL: 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+          targetRevision: ">=1.0.0"
+          helm:
+            valueFiles:
+              - values.yaml
+              - secrets://secrets.yaml
+        destination:
+          namespace: llm-preprod

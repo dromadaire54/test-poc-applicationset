@@ -1,0 +1,92 @@
+argocd-template-helm:
+  default:
+    spec:
+      project: llm
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+
+  argoApps:
+    llm-production:
+      enabled: true
+      finalizer: true
+      appsNameOverride: llm-production
+      spec:
+        source:
+          repoURL: 'https://github.com/ManakinCubber/llm.git'
+          path: k8s
+          targetRevision: main
+          helm:
+            valueFiles:
+              - secrets://environments/production/secrets.yaml
+              - environments/production/values.yaml
+        destination:
+          namespace: llm-production
+
+    llm-chat-demo-production:
+      enabled: true
+      finalizer: true
+      appsNameOverride: llm-chat-demo-production
+      spec:
+        source:
+          repoURL: 'https://github.com/ManakinCubber/llm-chat-demo.git'
+          path: k8s
+          targetRevision: main
+          helm:
+            valueFiles:
+              - secrets://environments/production/secrets.yaml
+              - environments/production/values.yaml
+        destination:
+          namespace: llm-production
+
+    copilot-front-prod:
+      enabled: true
+      finalizer: true
+      appsNameOverride: copilot-front-prod
+      spec:
+        source:
+          chart: copilot-frontend-helm
+          repoURL: 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+          targetRevision: ">=1.0.0"
+          helm:
+            releaseName: copilot-frontend-prod 
+            parameters:
+            - name: environmentName
+              value: preprod
+            ignoreMissingValueFiles: true
+            valueFiles:
+              - values.yaml
+              - values-prod.yaml
+              - secrets://environments/prod/secrets.yaml
+              - environments/prod/configs.yaml
+        destination:
+          namespace: llm-copilot-frontend-prod
+
+    copilot-back-prod:
+      enabled: true
+      finalizer: true
+      appsNameOverride: copilot-back-prod
+      spec:
+        source:
+          chart: copilot-backend-helm
+          repoURL: 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+          targetRevision: ">=1.0.0"
+          helm:
+            releaseName: copilot-backend-prod 
+            parameters:
+            - name: environmentName
+              value: preprod
+            ignoreMissingValueFiles: true
+            valueFiles:
+              - values.yaml
+              - values-prod.yaml
+              - secrets://environments/prod/secrets.yaml
+              - environments/prod/configs.yaml
+        destination:
+          namespace: llm-copilot-backend-prod

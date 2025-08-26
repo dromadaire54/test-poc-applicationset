@@ -1,0 +1,6 @@
+apiVersion: v2
+name: tiime-redirect
+description: A Helm chart to define 301 redirect ingress
+type: application
+version: 1.0.1
+appVersion: "1.0.0"

@@ -1,0 +1,63 @@
+image:
+  repository: 284983278621.dkr.ecr.eu-central-1.amazonaws.com/devops-main-backups
+  tag: latest
+
+awsRegion: "eu-west-1"
+
+onePassword:
+  password:
+  access_key:
+  device_uuid:
+  mail:
+
+backup:
+  roleArn:
+  cronjobs:
+
+security-template-helm:
+  networkPolicies:
+    - name: backup-network-policy
+      enabled: true
+      egress:
+        rules:
+          # -- Access all resources in the cluster
+          - to:
+              - namespaceSelector: {}
+              - podSelector: {}
+          # -- Access the port 443 & 5432 from outside the cluster
+          - to:
+              - ipBlock:
+                  cidr: 0.0.0.0/0
+            ports:
+              # -- https
+              - port: 443
+                protocol: TCP
+              # -- postgres
+              - port: 5432
+                protocol: TCP
+      ingress:
+        rules:
+          # -- Allow all pods in the same namespace
+          - from:
+              - podSelector: {}
+          # -- Allow to container port, metrics port from all namespaces
+          - from:
+              - namespaceSelector: {}
+            ports:
+              # -- container port
+              - port: 4180
+                protocol: TCP
+              # -- metrics
+              - port: 44180
+                protocol: TCP
+          # -- Allow outside of the cluster to access the port 8089 to renew certificate and https
+          - from:
+              - ipBlock:
+                  cidr: 0.0.0.0/0
+            ports:
+              # -- https
+              - port: 443
+                protocol: TCP
+              # -- acme port (renewinf certificate)
+              - port: 8089
+                protocol: TCP

@@ -1,0 +1,21 @@
+argocd-template-helm:
+  argoApps:
+    squash-autom:
+      enabled: true
+      spec:
+        source:
+          targetRevision: main
+          helm:
+            valueFiles:
+              - "values-preprod.yaml"
+              - "secrets://secrets-preprod.yaml"
+        syncPolicy:
+          automatedEnableDefaultConfig: false
+
+    mockoon:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values.yaml"

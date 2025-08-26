@@ -1,0 +1,41 @@
+{{- range $cronjob := .Values.cronjobs }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ $cronjob.name }}
+  labels:
+    tiime.tech/product: infra
+    tiime.tech/team: ops
+    tiime.tech/component: monitoring
+    tiime.tech/managed-by: argocd
+spec:
+  concurrencyPolicy: Forbid
+  schedule: {{ $cronjob.schedule | quote }}
+  jobTemplate:
+    spec:
+      suspend: true
+      template:
+        spec:
+          containers:
+            - name: {{ $cronjob.name }}
+              image:  "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
+              command: 
+                {{- toYaml $cronjob.cmd | nindent 16 }}
+              env:
+                - name: SLACK_APP_TOKEN
+                  {{- if hasKey $cronjob "slackToken" }}
+                  value: {{ $cronjob.slackToken | quote}}
+                  {{- else }}
+                  value: {{ $.Values.default.slackToken | quote}}
+                  {{- end }}
+                - name: SLACK_APP_CHANNEL
+                  valueFrom:
+                    secretKeyRef:
+                      name: pg-badger-slack-channels
+                      key: {{ $cronjob.name | quote }}
+          restartPolicy: OnFailure
+          serviceAccountName: {{ $.Release.Name }}
+      backoffLimit: 1
+---
+{{- end }}

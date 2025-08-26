@@ -1,0 +1,21 @@
+{{- if and (hasKey .Values "pgbouncer") .Values.pgbouncer.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "database.pgbouncer.serviceName" . }}
+  annotations:
+    service.kubernetes.io/topology-aware-hints: auto
+  labels: {{- include "database.pgbouncer.labels" $ | nindent 4}}
+spec:
+  selector:
+    {{- include "database.pgbouncer.selectorLabels" $ | nindent 4}}
+  ports:
+    - name: api
+      protocol: TCP
+      port: 6432
+      targetPort: 6432
+    - name: metrics
+      protocol: TCP
+      port: 9127
+      targetPort: 9127
+{{ end }}

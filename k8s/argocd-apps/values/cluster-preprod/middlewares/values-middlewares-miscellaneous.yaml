@@ -1,0 +1,29 @@
+argocd-template-helm:
+  argoApps:
+    jupyter-hub:
+      appsNameOverride: jupyter-hub
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values-preprod.yaml"
+              - "values-secret-preprod.yaml"
+              - "secrets://values-secret-preprod.yaml"
+
+    rabbitmq-operator:
+      appsNameOverride: rabbitmq-operator
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values.yaml"
+
+    tiime-addok:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values.yaml"

@@ -1,0 +1,1271 @@
+stunnel:
+  clickhouse: c3l1zioi8z.eu-central-1.aws.clickhouse.cloud
+  redis: master.sentry-cache.pkhxdu.euc1.cache.amazonaws.com
+
+sentry:
+  global:
+    sidecars:
+      - image: chainguard/stunnel:latest
+        imagePullPolicy: Always
+        name: stunnel
+        resources:
+          limits:
+            memory: 20Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        command:
+          - stunnel
+          - /etc/conf/stunnel.conf
+        stdin: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        tty: true
+        volumeMounts:
+          - mountPath: /etc/conf/
+            name: stunnel-config
+          - mountPath: /var/run/
+            name: run
+    volumes:
+      - configMap:
+          defaultMode: 420
+          name: stunnel-config
+          optional: false
+        name: stunnel-config
+      - name: run
+        emptyDir: {}
+
+  config:
+    relay: |
+      cache:
+        envelope_buffer_size: 1000000
+  externalClickhouse:
+    host: "127.0.0.1"
+    tcpPort: 9001
+    httpPort: 8123
+    username: default
+    database: default
+    singleNode: true
+
+  clickhouse:
+    enabled: false
+
+  ## This value is only used when redis.enabled is set to false
+  ##
+  externalRedis:
+    ## Hostname or ip address of external redis cluster
+    ##
+    host: "127.0.0.1"
+    port: 6379
+
+  externalPostgresql:
+    host: sentry.cvbtref35tcn.eu-central-1.rds.amazonaws.com
+    port: 5432
+    username: master
+    database: sentry
+    # sslMode: require
+
+  filestore:
+    backend: s3
+    s3:
+      bucketName: tiime-prod-sentry
+      region_name: eu-central-1
+      default_acl: private
+
+  github:
+    appId: "325388"
+    appName: SentryTiime
+
+  slack:
+    clientId: "3663372892.7227491173778"
+
+  hooks:
+    shareProcessNamespace: true
+    activeDeadlineSeconds: 3600
+    snubaMigrate:
+      sidecars:
+        - image: alpine:latest
+          imagePullPolicy: Always
+          name: sidecar-killer
+          resources: {}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              while [ $(pgrep snuba) ];
+              do
+                echo 'waiting...'
+                sleep 10
+              done
+              echo 'stunnel killed'
+              pkill stunnel
+
+    dbCheck:
+      resources:
+        limits:
+          memory: 64Mi
+        requests:
+          cpu: 30m
+          memory: 64Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+      sidecars:
+        - image: alpine:latest
+          imagePullPolicy: Always
+          name: sidecar-killer
+          resources: {}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              while [ $(pgrep -f '/bin/sh -c echo \"Checking if clickhouse is up\"') ];
+              do
+                echo 'waiting...'
+                sleep 10
+              done
+              echo 'stunnel killed'
+              pkill stunnel
+
+    dbInit:
+      resources:
+        limits:
+          memory: 2048Mi
+        requests:
+          cpu: 300m
+          memory: 2048Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+      sidecars:
+        - image: alpine:latest
+          imagePullPolicy: Always
+          name: sidecar-killer
+          resources: {}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              while [ $(pgrep sentry) ];
+              do
+                echo 'waiting...'
+                sleep 10
+              done
+              echo 'stunnel killed'
+              pkill stunnel
+
+    snubaInit:
+      resources:
+        limits:
+          cpu: 2000m
+          memory: 1Gi
+        requests:
+          cpu: 700m
+          memory: 1Gi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+      sidecars:
+        - image: alpine:latest
+          imagePullPolicy: Always
+          name: sidecar-killer
+          resources: {}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              while [ $(pgrep snuba) ];
+              do
+                echo 'waiting...'
+                sleep 10
+              done
+              echo 'stunnel killed'
+              pkill stunnel
+
+  ingress:
+    enabled: true
+    hostname: sentry.tiime.tech
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      nginx.ingress.kubernetes.io/proxy-body-size: 150m
+    tls:
+      - secretName: sentry-tls
+        hosts:
+          - sentry.tiime.tech
+
+  kafka:
+    controller:
+      persistence:
+        size: 120Gi
+      resources:
+        limits:
+          memory: 1500Mi
+        requests:
+          cpu: 30m
+          memory: 1500Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: karpenter.sh/capacity-type
+                    operator: In
+                    values:
+                      - on-demand
+    resources:
+      limits:
+        memory: 1500Mi
+      requests:
+        cpu: 50m
+        memory: 1500Mi
+    persistence:
+      size: 32Gi
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: karpenter.sh/capacity-type
+                  operator: In
+                  values:
+                    - on-demand
+
+  memcached:
+    extraEnvVarsCM: hub-sentry-memcached
+    memoryLimit: "4096"
+    maxItemSize: "31457280"
+
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      scrapeInterval: 60s
+
+  nginx:
+    enabled: false
+
+  postgresql:
+    enabled: false
+
+  rabbitmq:
+    replicaCount: 2
+    resources:
+      limits:
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: karpenter.sh/capacity-type
+                  operator: In
+                  values:
+                    - on-demand
+
+  redis:
+    enabled: false
+
+  relay:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: kubernetes.io/arch
+                  operator: In
+                  values:
+                    - amd64
+    resources:
+      limits:
+        memory: 2000Mi
+      requests:
+        cpu: 90m
+        memory: 1500Mi
+
+  sentry:
+    cleanup:
+      activeDeadlineSeconds: 100000
+      concurrency: 2
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+      resources:
+        requests:
+          cpu: 400m
+          memory: 736Mi
+        limits:
+          memory: 736Mi
+
+    billingMetricsConsumer:
+      resources:
+        limits:
+          memory: 256Mi
+        requests:
+          cpu:
+          memory: 256Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    ingestConsumerTransactions:
+      resources:
+        limits:
+          memory: 512Mi
+        requests:
+          cpu: 170m
+          memory: 512Mi
+      enabled: true
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    ingestConsumerEvents:
+      resources:
+        limits:
+          memory: 512Mi
+        requests:
+          cpu: 50m
+          memory: 512Mi
+      enabled: true
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    cron:
+      resources:
+        limits:
+          memory: 312Mi
+        requests:
+          cpu: 30m
+          memory: 312Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    genericMetricsConsumer:
+      resources:
+        limits:
+          memory: 2Gi
+        requests:
+          cpu: 100m
+          memory: 700Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    ingestConsumer:
+      noStrictOffsetReset: true
+      resources:
+        limits:
+          memory: 2000Mi
+        requests:
+          cpu: 1000m
+          memory: 2000Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    ingestConsumerAttachments:
+      resources:
+        limits:
+          memory: 700Mi
+        requests:
+          cpu: 30m
+          memory: 700Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    ingestMonitors:
+      resources:
+        limits:
+          memory: 300Mi
+        requests:
+          cpu: 30m
+          memory: 300Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    ingestOccurrences:
+      noStrictOffsetReset: true
+      resources:
+        limits:
+          memory: 500Mi
+        requests:
+          cpu: 30m
+          memory: 500Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    ingestProfiles:
+      resources:
+        limits:
+          memory: 500Mi
+        requests:
+          cpu: 400m
+          memory: 500Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    ingestReplayRecordings:
+      resources:
+        limits:
+          memory: 750Mi
+        requests:
+          cpu: 600m
+          memory: 750Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    metricsConsumer:
+      noStrictOffsetReset: true
+      resources:
+        limits:
+          memory: 800Mi
+        requests:
+          cpu: 30m
+          memory: 500Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    postProcessForwardErrors:
+      resources:
+        limits:
+          memory: 500Mi
+        requests:
+          cpu: 30m
+          memory: 500Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    postProcessForwardIssuePlatform:
+      resources:
+        limits:
+          memory: 500Mi
+        requests:
+          cpu: 30m
+          memory: 500Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    postProcessForwardTransactions:
+      noStrictOffsetReset: true
+      resources:
+        limits:
+          memory: 1000Mi
+        requests:
+          cpu: 30m
+          memory: 500Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    processSegments:
+      noStrictOffsetReset: true
+      resources:
+        limits:
+          memory: 500Mi
+        requests:
+          cpu: 30m
+          memory: 500Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    processSpans:
+      noStrictOffsetReset: true
+      resources:
+        limits:
+          memory: 500Mi
+        requests:
+          cpu: 30m
+          memory: 500Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    subscriptionConsumerEvents:
+      resources:
+        limits:
+          memory: 500Mi
+        requests:
+          cpu: 30m
+          memory: 500Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    subscriptionConsumerEapSpans:
+      resources:
+        limits:
+          memory: 500Mi
+        requests:
+          cpu: 30m
+          memory: 500Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    subscriptionConsumerGenericMetrics:
+      resources:
+        limits:
+          memory: 500Mi
+        requests:
+          cpu: 30m
+          memory: 500Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    subscriptionConsumerMetrics:
+      resources:
+        limits:
+          memory: 500Mi
+        requests:
+          cpu: 30m
+          memory: 500Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    subscriptionConsumerSessions:
+      resources:
+        limits:
+          memory: 500Mi
+        requests:
+          cpu: 30m
+          memory: 500Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    subscriptionConsumerTransactions:
+      resources:
+        limits:
+          memory: 500Mi
+        requests:
+          cpu: 30m
+          memory: 500Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    web:
+      replicas: 2
+      resources:
+        limits:
+          memory: 2500Mi
+        requests:
+          cpu: 300m
+          memory: 2000Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    worker:
+      replicas: 2
+      resources:
+        limits:
+          memory: 3000Mi
+        requests:
+          cpu: 2000m
+          memory: 2500Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+  serviceAccount:
+    enabled: true
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::284983278621:role/tiime-prod_sentry_role
+
+  snuba:
+    api:
+      resources:
+        limits:
+          memory: 400Mi
+        requests:
+          cpu: 30m
+          memory: 400Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    eapItemsSpanConsumer:
+      resources:
+        limits:
+          memory: 200Mi
+        requests:
+          cpu: 30m
+          memory: 200Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    outcomesBillingConsumer:
+      resources:
+        limits:
+          memory: 200Mi
+        requests:
+          cpu: 30m
+          memory: 200Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    spansConsumer:
+      resources:
+        limits:
+          memory: 150Mi
+        requests:
+          cpu: 30m
+          memory: 150Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    consumer:
+      noStrictOffsetReset: true
+      resources:
+        limits:
+          memory: 250Mi
+        requests:
+          cpu: 30m
+          memory: 250Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    genericMetricsGaugesConsumer:
+      noStrictOffsetReset: true
+      resources:
+        limits:
+          memory: 256Mi
+        requests:
+          cpu: 30m
+          memory: 256Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    genericMetricsCountersConsumer:
+      noStrictOffsetReset: true
+      resources:
+        limits:
+          memory: 256Mi
+        requests:
+          cpu: 30m
+          memory: 256Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    groupAttributesConsumer:
+      enabled: true
+      resources:
+        limits:
+          memory: 128Mi
+        requests:
+          cpu: 30m
+          memory: 128Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    genericMetricsDistributionConsumer:
+      noStrictOffsetReset: true
+      resources:
+        limits:
+          memory: 256Mi
+        requests:
+          cpu: 30m
+          memory: 256Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    genericMetricsSetsConsumer:
+      noStrictOffsetReset: true
+      resources:
+        limits:
+          memory: 256Mi
+        requests:
+          cpu: 30m
+          memory: 256Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    profilingChunksConsumer:
+      noStrictOffsetReset: true
+      resources:
+        limits:
+          memory: 200Mi
+        requests:
+          cpu: 30m
+          memory: 200Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+      
+    issueOccurrenceConsumer:
+      noStrictOffsetReset: true
+      resources:
+        limits:
+          memory: 200Mi
+        requests:
+          cpu: 30m
+          memory: 200Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    metricsConsumer:
+      noStrictOffsetReset: true
+      resources:
+        limits:
+          memory: 256Mi
+        requests:
+          cpu: 30m
+          memory: 256Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    outcomesConsumer:
+      noStrictOffsetReset: true
+      resources:
+        limits:
+          memory: 128Mi
+        requests:
+          cpu: 30m
+          memory: 128Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    profilingFunctionsConsumer:
+      noStrictOffsetReset: true
+      resources:
+        limits:
+          memory: 500Mi
+        requests:
+          cpu: 400m
+          memory: 500Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    profilingProfilesConsumer:
+      noStrictOffsetReset: true
+      resources:
+        limits:
+          memory: 500Mi
+        requests:
+          cpu: 30m
+          memory: 500Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    replacer:
+      resources:
+        limits:
+          memory: 128Mi
+        requests:
+          cpu: 30m
+          memory: 128Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    replaysConsumer:
+      noStrictOffsetReset: true
+      resources:
+        limits:
+          memory: 250Mi
+        requests:
+          cpu: 30m
+          memory: 250Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    sessionsConsumer:
+      resources:
+        limits:
+          memory: 500Mi
+        requests:
+          cpu: 30m
+          memory: 500Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    subscriptionConsumerEvents:
+      noStrictOffsetReset: true
+      resources:
+        limits:
+          memory: 128Mi
+        requests:
+          cpu: 30m
+          memory: 128Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    subscriptionConsumerMetrics:
+      noStrictOffsetReset: true
+      resources:
+        limits:
+          memory: 128Mi
+        requests:
+          cpu: 30m
+          memory: 128Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    subscriptionConsumerSessions:
+      resources:
+        limits:
+          memory: 500Mi
+        requests:
+          cpu: 30m
+          memory: 500Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    subscriptionConsumerTransactions:
+      noStrictOffsetReset: true
+      resources:
+        limits:
+          memory: 128Mi
+        requests:
+          cpu: 30m
+          memory: 128Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+    transactionsConsumer:
+      resources:
+        limits:
+          memory: 250Mi
+        requests:
+          cpu: 30m
+          memory: 250Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+  sourcemaps:
+    enabled: true
+
+  symbolicator:
+    enabled: true
+    api:
+      resources:
+        limits:
+          memory: 250Mi
+        requests:
+          cpu: 100m
+          memory: 250Mi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+
+  zookeeper:
+    autopurge:
+      purgeInterval: 5 # the zookeeper data will be purged every 5h
+
+    persistence:
+      size: 60Gi
+
+security-template-helm:
+  networkPolicies:
+    - name: sentry-network-policy
+      enabled: true
+      egress:
+        rules:
+          # -- Access all resources
+          - {}
+      ingress:
+        rules:
+          # -- Allow all pods in the same namespace
+          - from:
+              - podSelector: {}
+          # -- Allow sentry web ans sentry relay pods from outside the cluster
+          - from:
+              - ipBlock:
+                  cidr: 0.0.0.0/0
+            ports:
+              # -- sentry web port
+              - port: 9000
+                protocol: TCP
+              # -- sentry relay port
+              - port: 3000
+                protocol: TCP
+              # -- renew cert port
+              - port: 8089
+                protocol: TCP
+          # -- Allow all pods from the metro namespace for metrics
+          - from:
+              - namespaceSelector:
+                  matchLabels:
+                    kubernetes.io/metadata.name: metro
+              - namespaceSelector:
+                  matchLabels:
+                    kubernetes.io/metadata.name: metrology
+            ports:
+              # -- sentry metrics port
+              - port: 9102
+                protocol: TCP
+          # -- Allow all pod with in cert-manager instance inside the ingress namespace on port 8089
+          - from:
+              - namespaceSelector:
+                  matchLabels:
+                    kubernetes.io/metadata.name: ingress
+                podSelector:
+                  matchLabels:
+                    app.kubernetes.io/instance: cert-manager
+            ports:
+              # -- acme port (renewing certificate)
+              - port: 8089
+                protocol: TCP

@@ -1,0 +1,31 @@
+argocd-template-helm:
+  argoApps:         
+    metabase:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "secrets://values-secret-prod.yaml"
+              - "values-prod.yaml"
+
+    rabbitmq-operator:
+      appsNameOverride: rabbitmq-operator
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values.yaml"
+        syncPolicy:
+          automatedEnableDefaultConfig: false
+
+    tiime-redirect:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values-prod.yaml"
+        syncPolicy:
+          automatedEnableDefaultConfig: false          

@@ -1,0 +1,11 @@
+s3-chart:
+
+  deployment:
+    replicas: 0
+
+  aws:
+    region: eu-west-1
+  serviceAccount:
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::990075099095:role/preprod_ack_role
+

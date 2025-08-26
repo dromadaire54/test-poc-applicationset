@@ -1,0 +1,51 @@
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stop-rds
+data:
+  script.sh: |
+    #!/bin/bash
+    # Récupérer toutes les instances RDS
+    instances=$(aws rds describe-db-instances --query "DBInstances[?DBInstanceStatus=='available' && TagList[?Key=='isManual' && Value=='true'] && TagList[?Key=='tiime.tech:application:owner' && Value=='chronos']].DBInstanceIdentifier" --output text)
+
+    if [ -z "$instances" ]; then
+        echo "Aucune instance RDS à stopper"
+        exit 0
+    fi
+    
+    # Parcourir chaque instance et l'arrêter
+    for instance in $instances; do
+        echo "Arrêt de l'instance RDS: $instance"
+        aws rds stop-db-instance --db-instance-identifier $instance
+        aws rds add-tags-to-resource --region eu-central-1 \
+            --resource-name arn:aws:rds:eu-central-1:284983278621:db:$instance \
+            --tags Key=StoppedDate,Value="$(date '+%Y-%m-%d')"
+    done
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: delete-rds
+data:
+  script.sh: |
+    #!/bin/bash
+    # Récupérer toutes les instances RDS
+    instances=$(aws rds describe-db-instances --query "DBInstances[?DBInstanceStatus=='stopped' && TagList[?Key=='StoppedDate'] && TagList[?Key=='isManual' && Value=='true'] && TagList[?Key=='tiime.tech:application:owner' && Value=='chronos']].DBInstanceIdentifier" --output text)
+
+    if [ -z "$instances" ]; then
+        echo "Aucune instance RDS à supprimer"
+        exit 0
+    fi
+    # Parcourir chaque instance et la supprimer si elle est arrêtée depuis plus de 6 jours
+    for instance in $instances; do
+        stoppedTime=$(aws rds list-tags-for-resource --resource-name arn:aws:rds:eu-central-1:284983278621:db:$instance --query "TagList[?Key=='StoppedDate'].Value" --output text)
+        stoppedTimeInSeconds=$(date --date="$stoppedTime" +%s)
+        currentTimeInSeconds=$(date +%s)
+        sixDaysInSeconds=$((6*24*60*60))
+
+        if (( currentTimeInSeconds - stoppedTimeInSeconds > sixDaysInSeconds )); then
+            echo "Suppression de l'instance RDS: $instance"
+            aws rds delete-db-instance --db-instance-identifier $instance --skip-final-snapshot
+        fi
+    done

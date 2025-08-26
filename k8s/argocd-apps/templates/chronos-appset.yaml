@@ -1,0 +1,169 @@
+{{- if .Values.chronosAppSetPreprod.enabled -}}
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: chronos-preprod
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - env: amaranth
+            name: chronos-review-amaranth
+            revision: ">=1.0.0-amaranth < 1.0.0-amaranth.x"
+          - env: black	
+            name: chronos-review-black	
+            revision: '>=1.0.0-black < 1.0.0-black.x'
+          - env: blue
+            name: chronos-review-blue
+            revision: ">=1.0.0-blue < 1.0.0-blue.x"
+          - env: brown
+            name: chronos-review-brown
+            revision: ">=1.0.0-brown < 1.0.0-brown.x"
+          - env: cerfrance
+            name: chronos-review-cerfrance
+            revision: ">=1.0.0"
+          - env: cinereous
+            name: chronos-review-cinereous
+            revision: ">=1.0.0-cinereous < 1.0.0-cinereous.x"
+          - env: green
+            name: chronos-review-green
+            revision: ">=1.0.0-green < 1.0.0-green.x"
+          - env: grey
+            name: chronos-review-grey
+            revision: ">=1.0.0-grey < 1.0.0-grey.x"
+          - env: indigo
+            name: chronos-review-indigo
+            revision: ">=1.0.0-indigo < 1.0.0-indigo.x"
+          - env: lavender
+            name: chronos-review-lavender
+            revision: ">=1.0.0-lavender < 1.0.0-lavender.x"
+          - env: leafy
+            name: chronos-review-leafy
+            revision: ">=1.0.0-leafy < 1.0.0-leafy.x"
+          - env: orange
+            name: chronos-review-orange
+            revision: ">=1.0.0-orange < 1.0.0-orange.x"
+          - env: onyx
+            name: chronos-review-onyx
+            revision: ">=1.0.0-onyx < 1.0.0-onyx.x"
+          - env: pink
+            name: chronos-review-pink
+            revision: ">=1.0.0-pink < 1.0.0-pink.x"
+          - env: pistachio
+            name: chronos-review-pistachio
+            revision: ">=1.0.0-pistachio < 1.0.0-pistachio.x"
+          - env: purple
+            name: chronos-review-purple
+            revision: ">=1.0.0-purple < 1.0.0-purple.x"
+          - env: red
+            name: chronos-review-red
+            revision: ">=1.0.0-red < 1.0.0-red.x"
+          - env: teal
+            name: chronos-review-teal
+            revision: ">=1.0.0-teal < 1.0.0-teal.x"
+          - env: white
+            name: chronos-review-white
+            revision: ">=1.0.0-white < 1.0.0-white.x"
+          - env: yellow
+            name: chronos-review-yellow
+            revision: ">=1.0.0-yellow < 1.0.0-yellow.x"
+          - env: development
+            name: chronos-development
+            revision: ">=1.0.0-rc < 1.0.0-rc.x"
+  template:
+    metadata:
+      name: "{{ `{{.name}}` }}"
+    spec:
+      destination:
+        namespace: "{{ `{{.name}}` }}"
+        server: https://kubernetes.default.svc
+      ignoreDifferences:
+        - jqPathExpressions:
+            - .data
+          kind: ConfigMap
+          name: "{{ `{{.name}}` }}-database-config"
+        - jqPathExpressions:
+            - .data
+          kind: ConfigMap
+          name: audit-database-config
+        - jqPathExpressions:
+            - .data
+          kind: ConfigMap
+          name: licence-database-config
+        - group: apps
+          jqPathExpressions:
+            - .spec.replicas
+          kind: Deployment
+          name: newrelic-main
+      project: chronos
+      source:
+        chart: chronos-back-helm
+        helm:
+          ignoreMissingValueFiles: true
+          parameters:
+            - name: environmentName
+              value: "{{ `{{.env}}` }}"
+            - name: serviceAccountName
+              value: arn:aws:iam::990075099095:role/preprod_chronos_role
+          releaseName: "{{ `{{.name}}` }}"
+          valueFiles:
+            - values.yaml
+            - values-api.yaml
+            - common-values-cronjobs.yaml
+            - common-values-rabbitmq.yaml
+            - common-values-workers.yaml
+            - Product/Accounting/Expert/values-cronjobs.yaml
+            - Product/Accounting/Expert/values-rabbitmq.yaml
+            - Product/Accounting/Expert/values-workers.yaml
+            - Product/Accounting/GI/values-cronjobs.yaml
+            - Product/Accounting/GI/values-rabbitmq.yaml
+            - Product/Accounting/GI/values-workers.yaml
+            - Product/Accounts/values-cronjobs.yaml
+            - Product/Accounts/values-rabbitmq.yaml
+            - Product/Accounts/values-workers.yaml
+            - Product/Billing/values-cronjobs.yaml
+            - Product/Billing/values-rabbitmq.yaml
+            - Product/Billing/values-workers.yaml
+            - Product/BusinessAccount/values-cronjobs.yaml
+            - Product/BusinessAccount/values-rabbitmq.yaml
+            - Product/BusinessAccount/values-workers.yaml
+            - Product/Data/values-cronjobs.yaml
+            - Product/Data/values-rabbitmq.yaml
+            - Product/Data/values-workers.yaml
+            - Product/Invoice/values-cronjobs.yaml
+            - Product/Invoice/values-rabbitmq.yaml
+            - Product/Invoice/values-workers.yaml
+            - Product/Legal/values-cronjobs.yaml
+            - Product/Legal/values-rabbitmq.yaml
+            - Product/Legal/values-workers.yaml
+            - Product/Protect/values-cronjobs.yaml
+            - Product/Protect/values-rabbitmq.yaml
+            - Product/Protect/values-workers.yaml
+            - Product/Desk/values-cronjobs.yaml
+            - Product/Desk/values-rabbitmq.yaml
+            - Product/Desk/values-workers.yaml
+            - environnements/common/common_color_config.yaml
+            - secrets://environnements/common/common_color_secrets.yaml
+            - environnements/common/common_preprod_config.yaml
+            - secrets://environnements/common/common_preprod_secrets.yaml
+            - secrets://environnements/{{ `{{.env}}` }}/secrets.yaml
+            - environnements/{{ `{{.env}}` }}/config.yaml
+        repoURL: 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+        targetRevision: "{{ `{{.revision}}` }}"
+      syncPolicy:
+        automated:
+          allowEmpty: true
+          prune: true
+          selfHeal: true
+        retry:
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+          limit: 5
+        syncOptions:
+          - CreateNamespace=true
+{{- end -}}

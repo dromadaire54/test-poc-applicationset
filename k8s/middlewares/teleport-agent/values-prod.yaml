@@ -1,0 +1,52 @@
+teleport-kube-agent:
+  annotations:
+    serviceAccount:
+      eks.amazonaws.com/role-arn: arn:aws:iam::284983278621:role/tiime-prod_teleport_role
+  awsDatabases:
+  - regions:
+    - eu-west-1
+    - eu-central-1
+    tags:
+      '*': '*'
+    types:
+    - rds
+  highAvailability:
+    replicaCount: 2
+  insecureSkipProxyTLSVerify: true
+  joinParams:
+    method: token
+  kubeClusterName: tiime
+  labels:
+    name: tiime
+    region: eu-central-1
+  log:
+    format: json
+  podSecurityPolicy:
+    enabled: false
+  proxyAddr: teleport-cluster.teleport-cluster.svc.cluster.local:443
+  roles: db,kube,app
+  apps:
+  - labels:
+      env: prod
+    name: rabbitmq-prod
+    uri: http://rabbitmq.chronos-production.svc.cluster.local:15672
+  - labels:
+      env: school
+    name: rabbitmq-school
+    uri: http://rabbitmq.chronos-school.svc.cluster.local:15672
+  - labels:
+      env: prod
+    name: redis-prod
+    uri: http://redis-ui.chronos-production.svc.cluster.local:7843
+  - labels:
+      env: prod
+    name: apisix
+    uri: http://apisix-dashboard.apisix.svc.cluster.local:80
+  - labels:
+      env: prod
+    name: kubecost-prod
+    uri: http://kubecost-cost-analyzer.kubecost.svc.cluster.local:9090
+  - labels:
+      env: prod
+    name: argo-rollout-prod
+    uri: http://argo-rollout-dashboard.argo-rollout.svc.cluster.local:3100

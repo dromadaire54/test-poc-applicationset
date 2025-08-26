@@ -1,0 +1,61 @@
+teleport-cluster:
+  annotations:
+    service:
+      service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
+      service.beta.kubernetes.io/aws-load-balancer-target-group-attributes: preserve_client_ip.enabled=true
+      service.beta.kubernetes.io/aws-load-balancer-type: nlb
+      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+      external-dns.alpha.kubernetes.io/hostname: "teleport.tiime.tech,*.teleport.tiime.tech"
+    serviceAccount:
+      eks.amazonaws.com/role-arn: arn:aws:iam::284983278621:role/tiime-prod_teleport_role
+  authenticationSecondFactor:
+    secondFactor: "on"
+  aws:
+    auditLogMirrorToStdout: false
+    auditLogTable: tiime-teleport-events
+    backendTable: tiime-teleport-backend
+    backups: true
+    region: eu-central-1
+    sessionRecordingBucket: tiime-teleport-sessions
+  chartMode: aws
+  clusterName: teleport.tiime.tech
+  publicAddr: ["teleport.tiime.tech:443", "teleport-cluster.teleport-cluster.svc.cluster.local:443"]
+  highAvailability:
+    certManager:
+      enabled: true
+      issuerKind: ClusterIssuer
+      issuerName: letsencrypt-prod-dns01
+    replicaCount: 3
+  installCRDs: true
+  kubeClusterName: tiime
+  labels:
+    name: tiime
+    region: eu-central-1
+  log:
+    format: json
+  operator:
+    enabled: true
+    resources:
+      limits:
+        memory: 60Mi
+      requests:
+        memory: 20Mi
+        cpu: 100m
+  proxyProtocol: "off"
+
+  resources:
+    requests:
+      memory: 1Gi
+      cpu: 100m
+    limits:
+      memory: 1Gi
+
+internalService:
+  enabled: true
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-name: "k8s-teleport-cluster-internal"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internal
+    service.beta.kubernetes.io/aws-load-balancer-target-group-attributes: preserve_client_ip.enabled=true
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb

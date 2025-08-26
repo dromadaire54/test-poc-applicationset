@@ -1,0 +1,17 @@
+external-dns:
+  domainFilters:
+  - tiime.tech
+  - tiime.fr
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+  policy: sync
+  provider: aws
+  aws:
+    zoneMatchParent: true
+    assumeRoleArn: arn:aws:iam::851725266353:role/shared_dns_role
+  serviceAccount:
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::284983278621:role/tiime-prod_eks_external_dns_role
+  txtOwnerId: prod

@@ -1,0 +1,90 @@
+argocd-template-helm:
+  argoApps:
+    auth0-log-handler:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "secrets://values-secret-prod.yaml"
+              - "values-prod.yaml"
+
+    backup:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values.yaml"
+              - "values-prod.yaml"
+        syncPolicy:
+          automatedEnableDefaultConfig: false
+
+    rbac:
+      enabled: true
+      spec:
+        syncPolicy:
+          automatedEnableDefaultConfig: false
+
+    teleport-agent:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values.yaml"
+              - "values-prod.yaml"
+              - "secrets://values-secret-prod.yaml"
+
+    teleport-cluster:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values.yaml"
+              - "values-prod.yaml"
+
+    teleport-role:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values-prod.yaml"
+
+    tiime-network-policies:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values.yaml"
+              - "values/prod/values-middlewares.yaml"
+              - "values/prod/values-chronos-apps.yaml"
+              - "values/prod/values-data-apps.yaml"
+              - "values/prod/values-qa-apps.yaml"
+              - "values/prod/values-hub-apps.yaml"
+        syncPolicy:
+          automatedEnableDefaultConfig: false
+
+    tiime-veracode:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values.yaml"
+              - "values-prod.yaml"
+        syncPolicy:
+          automatedEnableDefaultConfig: false
+
+    tiime-satis:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values.yaml"
+              - "values-prod.yaml"
+              - "secrets://values-secret-prod.yaml"

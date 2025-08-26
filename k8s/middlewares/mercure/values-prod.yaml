@@ -1,0 +1,11 @@
+mercure:
+  ingress:
+    hosts:
+      - host: mercure.tiime.tech
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+    tls:
+      - secretName: mercure-tls
+        hosts:
+          - mercure.tiime.tech

@@ -1,0 +1,125 @@
+loki:
+  loki:
+    schemaConfig:
+      configs:
+      - from: "2020-07-31"
+        store: boltdb-shipper
+        object_store: s3
+        schema: v12
+        index:
+          path_prefix: index/
+          prefix: loki_prod_012_index_
+          period: 1d
+          tags: {}
+        chunks:
+          prefix: ""
+          period: 0s
+          tags: {}
+        row_shards: 16
+      - from: "2022-12-12"
+        store: tsdb
+        object_store: s3
+        schema: v12
+        index:
+          path_prefix: index/
+          prefix: loki_prod_012_tsdb_index_
+          period: 1d
+          tags: {}
+        chunks:
+          prefix: ""
+          period: 0s
+          tags: {}
+        row_shards: 16
+      - from: "2023-08-21"
+        store: tsdb
+        object_store: s3
+        schema: v13
+        index:
+          path_prefix: index/
+          prefix: loki_prod_012_tsdb_index_
+          period: 1d
+          tags: {}
+        chunks:
+          prefix: ""
+          period: 0s
+          tags: {}
+        row_shards: 16
+
+            
+    storage_config:
+      tsdb_shipper:
+        active_index_directory: /var/loki/tsdb-shipper/index
+        cache_location: /var/loki/tsdb-shipper/index_cache
+      boltdb_shipper:
+        active_index_directory: /var/loki/boltdb-shipper/index
+        cache_location: /var/loki/boltdb-shipper/boltdb-cache
+    
+    limits_config:
+      query_timeout: 10m
+
+    compactor:
+      working_directory: /var/loki/compactor
+
+    storage:
+      type: s3
+      bucketNames: 
+        chunks: "tiime-monitoring-logs"
+        ruler: "tiime-monitoring-logs"
+      s3:
+        endpoint: s3.dualstack.eu-central-1.amazonaws.com
+        region: eu-central-1
+    
+  global:
+    dnsService: "coredns"
+
+  lokiCanary:
+    enabled: false
+
+  test:
+    enabled: false
+
+  gateway:
+    enabled: false
+
+  ingress:
+    enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      nginx.ingress.kubernetes.io/proxy-body-size: 16m
+      kubernetes.io/ingress.class: nginx
+      nginx.ingress.kubernetes.io/auth-type: basic
+      nginx.ingress.kubernetes.io/auth-secret: loki-archive-basic-auth
+      nginx.ingress.kubernetes.io/auth-secret-type: auth-map
+      nginx.ingress.kubernetes.io/configuration-snippet: |
+       proxy_set_header X-Scope-OrgID $remote_user;
+    hosts:
+      - loki-archive.tiime.tech
+    tls:
+      - secretName: loki-archive-tls
+        hosts:
+          - loki-archive.tiime.tech
+
+  extraObjects: 
+    - |
+        apiVersion: v1
+        kind: Secret
+        type: Opaque
+        metadata:
+          name: loki-archive-basic-auth
+        data:
+          {{- range .Values.loki.tenants }}
+          {{ .name }}: {{ b64enc .password | quote }}
+          {{- end }}
+  
+  deploymentMode: SimpleScalable
+          
+  # This loki is deployed as read-only so you need to leave 0 replicas for the write component.
+  write:
+    replicas: 0
+  
+  # To enable/disable the loki-archive, you can set the replicas of backend and read components to 0 .
+  backend:
+    replicas: 0
+  read:
+    replicas: 0
+

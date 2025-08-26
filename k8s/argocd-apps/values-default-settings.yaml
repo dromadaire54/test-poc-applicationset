@@ -1,0 +1,20 @@
+argocd-template-helm:
+  default:
+    spec:
+      project: ops
+      syncPolicy:
+        automated:
+          prune: "true"
+          selfHeal: "true"
+          allowEmpty: "true"
+        syncOptions:
+          - Validate=true
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+        retry:
+          limit: 5
+          backoff: 
+            duration: 5s
+            factor: 2
+            maxDuration: 3m

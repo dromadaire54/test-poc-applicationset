@@ -1,0 +1,120 @@
+{{- if not ($.Values.global.maintenance.enabled) -}}
+{{- if hasKey .Values "workers"}}
+{{- range $workerName, $worker := .Values.workers }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "worker.name" (dict "name" $workerName )}}
+  labels:
+    {{ include "worker.labels" $ | nindent 4}}
+  {{- if not (hasKey $worker "autoscaling") }}
+    {{ $.Values.global.organization }}/autoscaling: "false"
+  {{- end }}
+spec:
+{{- if not (hasKey $worker "autoscaling") }}
+  replicas: {{ $worker.replica }}
+{{- end }}
+  selector:
+    matchLabels:
+      {{ $.Values.global.organization }}/component: {{ include "worker.name" (dict "name" $workerName )}}
+      {{ include "worker.selectorLabels" $ | nindent 6 }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 0%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels: 
+        {{ $.Values.global.organization }}/team: {{ $worker.team }}
+        {{ $.Values.global.organization }}/component: {{ include "worker.name" (dict "name" $workerName )}}
+        {{ $.Values.global.organization }}/escloud-log-export: "true"
+        {{ include "worker.labels" $ | nindent 8 }}
+      annotations:
+        {{ $.Values.global.organization }}/checksum-config: {{ $.Values | toString | sha256sum }}
+    spec:
+      {{- if $worker.tolerations }}
+      nodeSelector:
+        {{- toYaml $worker.nodeSelector | nindent 8 }}
+      tolerations:
+        {{- toYaml $worker.tolerations | nindent 8 }}
+      {{- else }}
+      tolerations:
+        - key: "arch"
+          operator: "Equal"
+          value: "arm64"
+          effect: "NoSchedule"
+      {{- end }}
+      containers:
+      - image: "{{ $.Values.global.images.php.repository }}:{{ $.Values.global.images.php.tag }}"
+        name: {{ $workerName }}
+        {{- if $worker.command }}
+        command: {{ $worker.command }}
+        {{- end }}
+        {{- if $worker.args }}
+        args: 
+          {{- range $args := $worker.args }}
+          - {{ $args }}
+          {{- end }}
+        {{- else }}
+        args:
+          - "supervisord" 
+          - "-n"
+          - "-c"
+          - {{ $worker.args | default "config/supervisor/rabbitmq_worker.conf" | quote}}
+        {{- end }}
+        env:
+          - name: WORKER_TEAM
+            value: {{ $worker.team }}
+          - name: TASK_NAME
+            value: {{ $worker.queueName | default "" }}
+          {{- if and ($worker.kind) (eq $worker.kind "messenger") }}
+          - name: WORKER_SYMFONY_CMD
+            value: "messenger:consume {{ $worker.transport | default "amqp" }} --queues="
+          {{- else if and ($worker.kind) (eq $worker.kind "swarrot") }}
+          - name: WORKER_SYMFONY_CMD
+            value: "swarrot:consume:rabbitmq_worker "
+          {{- end }}
+          - name: MAX_MESSAGES
+            value: "{{ $worker.maxMessage | default "1" }}"
+            {{- include "tiime-core.new_relic_config" (dict "newRelicSplitEnabled" $.Values.newRelicSplitEnabled "subProject" "worker" "Release" $.Release) | indent 10 }}
+            {{- include "tiime-core.deployment.env" (dict "pgbouncer" true "root" $) | nindent 10 }}
+            {{- include "tiime-core.php.memory_env" $worker.resources.limits.memory  | indent 10 }}
+        envFrom:
+          {{- if $worker.secretRef }}
+          {{- range $secretRef := $worker.secretRef }}
+          - secretRef:
+              name: {{ $secretRef }}
+          {{- end }}
+          {{- else }}
+          - secretRef:
+              name: {{ $.Release.Name }}
+          - secretRef:
+              name: {{ $.Release.Name }}-env-common
+          {{- end }}
+        resources:
+          {{- toYaml $worker.resources | nindent 10 }}
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "2"
+      serviceAccountName: {{ $.Release.Name }}
+      {{- if hasKey $worker "extraSpec" }}
+      {{ $worker.extraSpec | toYaml | nindent 6 }}
+      {{- else }}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - arm64
+      {{- end }}
+  revisionHistoryLimit: 2
+{{- end }}
+{{- end }}
+{{- end }}

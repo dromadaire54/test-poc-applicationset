@@ -1,0 +1,65 @@
+argocd-template-helm:
+  argoApps:
+    cni-metrics-helper:
+      enabled: true
+
+    fluentbit:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values-preprod.yaml"
+              - "secrets://values-secret-preprod.yaml"
+
+    k8s-monitoring:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values.yaml"
+              - "values-preprod.yaml"
+              - "secrets://values-secret-preprod.yaml"
+        syncPolicy:
+          automatedEnableDefaultConfig: false
+
+    pg-badger:
+      enabled: false
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values-preprod.yaml"
+              - "secrets://values-secret-preprod.yaml"
+
+    prometheus-cloudwatch-exporter:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values-preprod.yaml"
+
+    prometheus-crd:
+      enabled: true
+
+    prometheus-ethtool-exporter:
+      enabled: true
+
+    prometheus-rds-exporter:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values-preprod.yaml"
+
+    uptimerobot-operator:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values.yaml"
+              - "secrets://values-secret-preprod.yaml"

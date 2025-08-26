@@ -1,0 +1,36 @@
+kyverno:
+  features:
+    logging:
+    format: json
+    verbosity: 2
+
+  cleanupController:
+    resources:
+      # -- Pod resource limits
+      limits:
+        memory: 2Gi
+      requests:
+        cpu: 100m
+        memory: 1Gi
+    rbac:
+      clusterRole:
+        # -- Extra resource permissions to add in the cluster role
+        extraResources:
+          - apiGroups:
+              - "apps"
+            resources:
+              - replicasets
+            verbs:
+              - delete
+              - get
+              - list
+              - watch
+
+  reportsController:
+    resources:
+      # -- Pod resource limits
+      limits:
+        memory: 2Gi
+      requests:
+        cpu: 100m
+        memory: 1Gi

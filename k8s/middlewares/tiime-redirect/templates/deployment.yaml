@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-links-deployment
+  labels:
+    app: {{ .Release.Name }}-links
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-links
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-links
+    spec:
+      containers:
+      - name: nginx-config-links-container
+        image: nginx:latest
+        volumeMounts:
+        - name: nginx-config-links-volume
+          mountPath: /etc/nginx/conf.d
+        resources:
+          limits:
+            memory: 30Mi
+          requests:
+            memory: 10Mi
+            cpu: 100m
+      volumes:
+      - name: nginx-config-links-volume
+        configMap:
+          name: nginx-config-links

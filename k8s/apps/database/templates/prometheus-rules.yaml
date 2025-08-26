@@ -1,0 +1,66 @@
+{{- if .Values.alerting.enabled }}
+{{- $splits := regexSplit "\\." .Values.database.host -1 }}
+{{- $identifier := index $splits 0 -}}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: posgresql-{{ $identifier }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  groups:
+    - name: postgresql
+      rules:
+        - alert: DatabaseOutOfStorageCritical
+          annotations:
+            summary: Storage size is approaching the maximum storage threshold. Increase the maximum storage threshold {{ .Values.alerting.threshold }}.
+          expr: last_over_time(aws_rds_free_storage_space_average{dimension_DBInstanceIdentifier=~"{{ $identifier }}.*"}[5m]) / 1000000000 < {{ .Values.alerting.threshold }}
+          for: 30m
+          labels:
+            severity: critical
+        - alert: Database-CPU-High-Utilisation
+          annotations:
+            message: The Database cpu utilisation during the last 1 hour is higher than
+              90%.
+          expr: aws_rds_cpuutilization_average > 90
+          for: 1h
+          labels:
+            severity: warning
+        - alert: KubeAPIErrorBudget < 80 %
+          annotations:
+            summary: The API server error budget < 80 %
+          expr: 100 * (apiserver_request:availability30d{verb="all", cluster=""} - 0.990000) < 0.80
+          for: 1m
+          labels:
+            severity: critical
+        - alert: PostgresqlEBSByteBalanceAlmostConsumed
+          annotations:
+            summary: Postgresql EBSByteBalance almost fully used
+          expr: last_over_time(aws_rds_ebsbyte_balance_percent_average{dimension_DBInstanceIdentifier=~"{{ $identifier }}.*"}[15m])
+            <= 20
+          for: 2h
+          labels:
+            severity: warning
+        - alert: PostgresqlEBSByteBalanceAlmostConsumedCritical
+          annotations:
+            summary: Postgresql EBSByteBalance almost fully used
+          expr: last_over_time(aws_rds_ebsbyte_balance_percent_average{dimension_DBInstanceIdentifier=~"{{ $identifier }}.*"}[15m])
+            <= 20
+          for: 10m
+          labels:
+            severity: critical
+        - alert: PostgresqlEBSIOBalanceAlmostConsumed
+          annotations:
+            summary: Postgresql EBSIOBalance almost fully used
+          expr: last_over_time(aws_rds_ebsiobalance_percent_average{dimension_DBInstanceIdentifier=~"{{ $identifier }}.*"}[15m])
+            <= 20
+          for: 2h
+          labels:
+            severity: warning
+        - alert: PostgresqlEBSIOBalance
+          annotations:
+            summary: Postgresql EBSIOBalance almost fully used on critical databases
+          expr: last_over_time(aws_rds_ebsiobalance_percent_average{dimension_DBInstanceIdentifier=~"{{ $identifier }}.*"}[15m])
+            <= 20
+          labels:
+            severity: critical
+{{- end }}

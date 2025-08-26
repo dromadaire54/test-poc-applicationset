@@ -1,0 +1,159 @@
+argocd-template-helm:
+  default:
+    spec:
+      project: data-science
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+
+  argoApps:
+    ds-dev-dagobah:
+      enabled: true
+      finalizer: true
+      appsNameOverride: ds-dev-dagobah
+      spec:
+        source:
+          chart: data-science-helm
+          repoURL: 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+          targetRevision: ">=1.0.0-dev-dagobah <1.0.0-dev-dagobah.x"
+          helm:
+            ignoreMissingValueFiles: true
+            valueFiles:
+              - values.yaml
+              - values/deployments.yaml
+              - values/cronjobs.yaml
+              - values/metrics.yaml
+              - values/rabbitmq.yaml
+              - secrets://secrets.yaml
+              - environments/dev-dagobah/values.yaml
+              - secrets://environments/dev-dagobah/secrets.yaml
+        syncPolicy:
+          automatedEnableDefaultConfig: true
+        destination:
+          namespace: ds-dev-dagobah
+
+    ds-dev-endor:
+      enabled: true
+      finalizer: true
+      appsNameOverride: ds-dev-endor
+      spec:
+        source:
+          chart: data-science-helm
+          repoURL: 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+          targetRevision: ">=1.0.0-dev-endor <1.0.0-dev-endor.x"
+          helm:
+            ignoreMissingValueFiles: true
+            valueFiles:
+              - values.yaml
+              - values/deployments.yaml
+              - values/cronjobs.yaml
+              - values/metrics.yaml
+              - values/rabbitmq.yaml
+              - secrets://secrets.yaml
+              - environments/dev-endor/values.yaml
+              - secrets://environments/dev-endor/secrets.yaml
+            parameters:
+              - name: environmentName
+                value: dev-endor
+              - name: serviceAccountName
+                value: 'arn:aws:iam::990075099095:role/preprod_issuer_data_role'
+        syncPolicy:
+          automatedEnableDefaultConfig: true
+        destination:
+          namespace: ds-dev-endor
+
+    ds-dev-naboo:
+      enabled: true
+      finalizer: true
+      appsNameOverride: ds-dev-naboo
+      spec:
+        source:
+          chart: data-science-helm
+          repoURL: 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+          targetRevision: ">=1.0.0-dev-naboo <1.0.0-dev-naboo.x"
+          helm:
+            ignoreMissingValueFiles: true
+            valueFiles:
+              - values.yaml
+              - values/deployments.yaml
+              - values/cronjobs.yaml
+              - values/metrics.yaml
+              - values/rabbitmq.yaml
+              - secrets://secrets.yaml
+              - environments/dev-naboo/values.yaml
+              - secrets://environments/dev-naboo/secrets.yaml
+            parameters:
+              - name: environmentName
+                value: dev-naboo
+              - name: serviceAccountName
+                value: 'arn:aws:iam::990075099095:role/preprod_issuer_data_role'
+        syncPolicy:
+          automatedEnableDefaultConfig: true
+        destination:
+          namespace: ds-dev-naboo
+
+    ds-dev-tatooine:
+      enabled: true
+      finalizer: true
+      appsNameOverride: ds-dev-tatooine
+      spec:
+        source:
+          chart: data-science-helm
+          repoURL: 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+          targetRevision: ">=1.0.0-dev-tatooine <1.0.0-dev-tatooine.x"
+          helm:
+            ignoreMissingValueFiles: true
+            valueFiles:
+              - values.yaml
+              - values/deployments.yaml
+              - values/cronjobs.yaml
+              - values/metrics.yaml
+              - values/rabbitmq.yaml
+              - secrets://secrets.yaml
+              - environments/dev-tatooine/values.yaml
+              - secrets://environments/dev-tatooine/secrets.yaml
+            parameters:
+              - name: environmentName
+                value: dev-tatooine
+              - name: serviceAccountName
+                value: 'arn:aws:iam::990075099095:role/preprod_issuer_data_role'
+        syncPolicy:
+          automatedEnableDefaultConfig: true
+        destination:
+          namespace: ds-dev-tatooine
+
+    ds-staging:
+      appsNameOverride: ds-staging
+      enabled: true
+      finalizer: true
+      spec:
+        source:
+          chart: data-science-helm
+          repoURL: 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+          targetRevision: ">=1.0.0-staging <1.0.0-staging.x"
+          helm:
+            ignoreMissingValueFiles: true
+            valueFiles:
+              - values.yaml
+              - values/deployments.yaml
+              - values/cronjobs.yaml
+              - values/metrics.yaml
+              - values/rabbitmq.yaml
+              - secrets://secrets.yaml
+              - environments/staging/values.yaml
+              - secrets://environments/staging/secrets.yaml
+            parameters:
+              - name: environmentName
+                value: staging
+              - name: serviceAccountName
+                value: 'arn:aws:iam::990075099095:role/preprod_issuer_data_role'
+        syncPolicy:
+          automatedEnableDefaultConfig: true
+        destination:
+          namespace: ds-staging

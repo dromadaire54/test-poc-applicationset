@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{include "database.configmapName" .}}
+  labels: {{- include "database.labels" $ | nindent 4}}
+  annotations:
+    "helm.sh/hook": "pre-install, pre-upgrade"
+    "helm.sh/resource-policy": keep
+data:
+  host: {{.Values.database.host | quote}}
+  port: {{.Values.database.port | default 5432 | quote}}
+  user: {{.Values.database.user | quote}}
+  name: {{.Values.database.name | quote}}

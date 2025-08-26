@@ -1,0 +1,80 @@
+keda:
+  logging:
+    operator:
+      format: json
+  tolerations:
+    - key: "arch"
+      operator: "Equal"
+      value: "arm64"
+      effect: "NoSchedule"
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 1
+          preference:
+            matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                  - arm64
+  prometheus:
+    operator:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+
+security-template-helm:
+  networkPolicies:
+    - name: keda-network-policy
+      enabled: true
+      egress:
+        rules:
+          # -- Access to ingress from outside the cluster
+          - ports:
+              # -- https port
+              - port: 443
+                protocol: TCP
+              # -- MSK Kafka port
+              - port: 9096
+                protocol: TCP
+              # -- Postgresql port
+              - port: 5432
+                protocol: TCP
+            to:
+              - ipBlock:
+                  cidr: 0.0.0.0/0
+          # -- Access to all pod in the same namespace
+          - to:
+              - podSelector: {}
+          # -- Access to all pod
+          - to:
+              - namespaceSelector: {}
+      ingress:
+        rules:
+          # -- Allow all pod in the same namespace
+          - from:
+              - podSelector: {}
+          # -- Allow all pod to port 9666 (keda operator), 443 (https) and 8080 (metrics)
+          - from:
+              - namespaceSelector: {}
+            ports:
+              # -- https port
+              - port: 443
+                protocol: TCP
+              # -- keda operator port
+              - port: 9666
+                protocol: TCP
+              # -- metrics port
+              - port: 8080
+                protocol: TCP
+              # -- Kafka port
+              - port: 9096
+                protocol: TCP
+          # -- Allow the metrics secure port from outside the cluster
+          - from:
+              - ipBlock:
+                  cidr: 0.0.0.0/0
+            ports:
+              # -- metrics port (secure port)
+              - port: 6443
+                protocol: TCP

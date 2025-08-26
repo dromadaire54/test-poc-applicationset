@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dora-exporter-config
+data:
+  config.yaml: |
+    teams:
+    {{- range .Values.dora.config }}
+    - name: {{ .team }}
+      github_repositories:
+      {{- range .repos }}
+        - {{ . }}
+      {{- end }}
+      jira_projects:
+      {{- range .jira_projects }}
+        - {{ . }}
+      {{- end }}
+    {{- end }}
+
+    server:
+      port: 8090

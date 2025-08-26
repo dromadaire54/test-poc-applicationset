@@ -1,0 +1,186 @@
+k8s-monitoring:
+  clusterMetrics:
+    enabled: true
+    kube-state-metrics:
+      metricLabelsAllowlist:
+        - jobs=[tiime.tech/team]
+      selfMonitor:
+        enabled: true
+      resources:
+        requests:
+          cpu: 0.01
+          memory: 500Mi
+        limits:
+          cpu: 0.5
+          memory: 800Mi
+      deploy: true
+      enabled: true
+      metricsTuning:
+        useIntegrationAllowList: true
+        includeMetrics:
+          - kube_cronjob.*
+          - kube_pod_container_status_last_terminated_exitcode
+          - kube_job_labels
+          - kube_pod_container_status_running
+          - kube_state_metrics_*
+          - kube_resourcequota
+    node-exporter:
+      deploy: true
+      enabled: true
+      metricsTuning:
+        useIntegrationAllowList: true
+        includeMetrics:
+          - node_vmstat_*
+          - node_load*
+          - node_disk_*
+    opencost:
+      enabled: true
+      opencost:
+        exporter:
+          resources:
+            requests:
+              cpu: 0.01
+              memory: 1000Mi
+            limits:
+              cpu: 1
+              memory: 1000Mi
+        prometheus:
+          external:
+            url: https://mimir-prod-24-cortex-gw.eu-central-1.vpce.grafana.net/api/prom
+          existingSecretName: metricsservice-k8s-monitoring
+      metricsSource: metricsservice
+    kepler:
+      enabled: true
+      tolerations:
+        - operator: Exists
+          effect: NoSchedule
+      resources:
+        requests:
+          cpu: 0.01
+          memory: 200Mi
+        limits:
+          cpu: 0.5
+          memory: 200Mi
+  alloy-metrics:
+    controller:
+      replicas: 2
+    clustering:
+      enabled: true
+    configReloader:
+      resources:
+        limits:
+          cpu: 1m
+          memory: 16Mi
+        requests:
+          cpu: 1m
+          memory: 16Mi
+    alloy:
+      resources:
+        requests:
+          cpu: 1
+          memory: 6Gi
+        limits:
+          cpu: 1
+          memory: 6Gi
+    enabled: true
+  clusterEvents:
+    enabled: true
+  alloy-singleton:
+    alloy:
+      resources:
+        requests:
+          cpu: 0.01
+          memory: 200Mi
+        limits:
+          cpu: 0.5
+          memory: 200Mi
+    enabled: true
+  podLogs:
+    enabled: true
+    extraDiscoveryRules: |
+      rule {
+        source_labels = ["__meta_kubernetes_pod_node_name"]
+        target_label  = "node_name"
+      }
+    extraLogProcessingStages: |-
+      stage.json {
+        expressions = {
+          company_id = "extra.route.companyId",
+          route_name = "extra.route._route",
+          auth0_id = "extra.auth0_id",
+          trace_id = "extra.trace_id",
+          amqp_task_type = "context.message.body.type",
+        }
+      }
+
+      stage.structured_metadata {
+          values = {
+            node_name = "",
+            pod = "",
+            company_id = "",
+            route_name = "",
+            amqp_task_type = "",
+            trace_id  = "",
+            auth0_id = "",
+          }
+      }
+  alloy-logs:
+    enabled: true
+  applicationObservability:
+    enabled: true
+    receivers:
+      otlp:
+        includeDebugMetrics: true
+        grpc:
+          enabled: true
+        http:
+          enabled: true
+      zipkin:
+        enabled: true
+        includeDebugMetrics: true
+    connectors:
+      grafanaCloudMetrics:
+        enabled: true
+  alloy-receiver:
+    controller:
+      replicas: 2
+    clustering:
+      enabled: true
+    configReloader:
+      resources:
+        limits:
+          cpu: 1m
+          memory: 16Mi
+        requests:
+          cpu: 1m
+          memory: 16Mi
+    alloy:
+      resources:
+        requests:
+          cpu: 1
+          memory: 1Gi
+        limits:
+          cpu: 1
+          memory: 1Gi
+    enabled: true
+  annotationAutodiscovery:
+    enabled: true
+  prometheusOperatorObjects:
+    enabled: true
+    crds:
+      deploy: false
+  integrations:
+    alloy:
+      instances:
+        - name: alloy
+          labelSelectors:
+            app.kubernetes.io/name:
+              - alloy-metrics
+              - alloy-singleton
+              - alloy-logs
+              - alloy-receiver
+          metrics:
+            tuning:
+              useDefaultAllowList: true
+              includeMetrics:
+                - alloy_build_info

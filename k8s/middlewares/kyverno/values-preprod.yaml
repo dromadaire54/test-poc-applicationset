@@ -1,0 +1,42 @@
+aws:
+  accountId: "990075099095"
+  region: "eu-west-1"
+  shared_pullthrough:
+    accountId: "851725266353"
+    region: "eu-central-1"
+kyverno:
+  admissionController:
+    rbac:
+      serviceAccount:
+        annotations:
+          eks.amazonaws.com/role-arn: arn:aws:iam::990075099095:role/preprod_kyverno_role
+    replicas: 3
+    serviceMonitor:
+      # -- Create a `ServiceMonitor` to collect Prometheus metrics.
+      enabled: true
+      interval: 60s
+
+  backgroundController:
+    replicas: 3
+    serviceMonitor:
+      # -- Create a `ServiceMonitor` to collect Prometheus metrics.
+      enabled: true
+      interval: 60s
+
+  cleanupController:
+    replicas: 3
+    serviceMonitor:
+      # -- Create a `ServiceMonitor` to collect Prometheus metrics.
+      enabled: true
+      interval: 60s
+
+  reportsController:
+    replicas: 3
+    serviceMonitor:
+      # -- Create a `ServiceMonitor` to collect Prometheus metrics.
+      enabled: true
+      interval: 60s
+
+  policies:
+    cleanupEmptyReplicaSets:
+      enabled: true

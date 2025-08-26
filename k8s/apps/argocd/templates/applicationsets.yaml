@@ -1,0 +1,24 @@
+{{- range $name, $appSet := .Values.argoAppSets }}
+{{- with $name }}
+{{- if $appSet.enabled }}
+{{- $hasAutoSync := false }}
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: {{ $name }}
+  namespace: argocd
+spec:
+  generators:
+  - list:
+      elements:
+      {{- if hasKey $appSet "elements" }}
+      {{ $appSet.elements | toYaml | nindent 6 }}
+      {{- end }}
+  template:
+    metadata:
+      name: {{ $appSet.name | required "Argocd application name is required" }}
+{{ include "argocd.app.spec" (dict "default" $.Values.default "template" $appSet) | indent 4 }}
+{{- end }}
+{{- end }}
+---
+{{- end }}

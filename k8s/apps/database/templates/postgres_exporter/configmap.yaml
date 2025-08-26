@@ -1,0 +1,13 @@
+{{- if and (hasKey .Values "postgres_exporter") .Values.postgres_exporter.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-exporter-database-extended-queries
+  labels: {{- include "database.postgres_exporter.labels" $ | nindent 4}}
+  annotations:
+    "helm.sh/hook": "pre-install, pre-upgrade"
+    "helm.sh/resource-policy": keep
+data:
+  queries.yaml: |-
+{{- .Files.Get "files/postgres_exporter/queries.yaml" | nindent 4 }}
+{{- end }}

@@ -1,0 +1,30 @@
+cert-manager:
+  cainjector:
+    resources:
+      limits:
+        cpu: 100m
+        memory: 300Mi
+      requests:
+        cpu: 50m
+        memory: 200Mi
+  prometheus:
+    servicemonitor:
+      enabled: true
+  resources:
+    limits:
+      cpu: 160m
+      memory: 512Mi
+    requests:
+      cpu: 80m
+      memory: 512Mi
+  serviceAccount:
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::284983278621:role/tiime-prod_issuer_dns_role
+  webhook:
+    resources:
+      limits:
+        cpu: 100m
+        memory: 80Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi

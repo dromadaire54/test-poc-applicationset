@@ -1,0 +1,127 @@
+k8s-monitoring:
+  cluster:
+    name: tiime-prod
+  alloy-receiver:
+    controller:
+      replicas: 2
+  alloy-logs:
+    enabled: true
+    alloy:
+      resources:
+        requests:
+          cpu: 0.25
+          memory: 150Mi
+        limits:
+          memory: 150Mi
+  clusterMetrics:
+    opencost:
+      opencost:
+        exporter:
+          defaultClusterId: tiime-prod
+
+  extraConfig: |
+    discovery.kubernetes "services" {
+      role = "service"
+    }
+    discovery.kubernetes "pods" {
+      role = "pod"
+    }
+    remote.kubernetes.secret "alerting_service" {
+      name = "prometheus-k8s-alerting"
+      namespace = "metrology"
+    }
+
+    remote.kubernetes.secret "prometheus_config" {
+      name = "prometheus-k8s-config"
+      namespace = "metrology"
+    }
+
+    remote.kubernetes.secret "alerting_service" {
+      name = "prometheus-k8s-alerting"
+      namespace = "metrology"
+    }
+
+    mimir.rules.kubernetes "rules" {
+      address = nonsensitive(remote.kubernetes.secret.prometheus_config.data["host"])
+      tenant_id = nonsensitive(remote.kubernetes.secret.prometheus_config.data["tenantId"])
+      mimir_namespace_prefix = "tiime-prod"
+      basic_auth {
+        username = nonsensitive(remote.kubernetes.secret.metricsservice.data["username"])
+        password = remote.kubernetes.secret.alerting_service.data["password"]
+      }
+      extra_query_matchers{
+        matcher {
+          match_type = "=~"
+          name = "cluster"
+          value = "tiime-prod|"
+        }
+      }
+    }
+
+    discovery.relabel "kube_state_metrics_self" {
+      targets = discovery.kubernetes.services.targets
+      rule {
+        source_labels = ["__meta_kubernetes_service_label_release"]
+        regex = "k8s-monitoring"
+        action = "keep"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_service_label_app_kubernetes_io_name"]
+        regex = "kube-state-metrics"
+        action = "keep"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_service_port_name"]
+        regex = "metrics"
+        action = "keep"
+      }
+    }
+
+    prometheus.scrape "kube_state_metrics_self" {
+      job_name   = "integrations/kubernetes/kube-state-metrics"
+      targets    = discovery.relabel.kube_state_metrics_self.output
+      scrape_interval = "60s"
+      clustering {
+        enabled = true
+      }
+      forward_to = [prometheus.relabel.kube_state_metrics_self.receiver]
+    }
+
+    prometheus.relabel "kube_state_metrics_self" {
+      max_cache_size = 100000
+      rule {
+        source_labels = ["__name__"]
+        regex = "kube_state_metrics_.*"
+        action = "keep"
+      }
+      forward_to = [prometheus.relabel.metrics_service.receiver]
+    }
+
+    prometheus.scrape "kube_apiserver" {
+      job_name   = "integrations/kubernetes/kube-apiserver"
+      targets   = array.concat(discovery.kubernetes.pods.targets, discovery.kubernetes.services.targets)
+      scheme   = "https"
+      scrape_interval = "60s"
+      bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+      tls_config {
+        insecure_skip_verify = true
+      }
+      clustering {
+        enabled = true
+      }
+      forward_to = [prometheus.relabel.kube_apiserver.receiver]
+    }
+
+    prometheus.relabel "kube_apiserver" {
+      max_cache_size = 100000
+      rule {
+        source_labels = ["__name__"]
+        regex = ".*"
+        action = "keep"
+      }
+      forward_to = [prometheus.relabel.metrics_service.receiver]
+    }
+
+    prometheus.relabel "metrics_service" {
+      forward_to = [prometheus.remote_write.metricsservice.receiver]
+    }

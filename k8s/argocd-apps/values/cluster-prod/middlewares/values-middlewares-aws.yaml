@@ -1,0 +1,43 @@
+argocd-template-helm:
+  argoApps:
+    aws-ack-rds:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values-prod.yaml"
+
+    aws-ack-s3:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values-prod.yaml"
+
+    aws-load-balancer-controller:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values.yaml"
+              - "values-prod.yaml"
+
+    aws-mountpoint-csi-driver:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values-prod.yaml"
+
+    aws-emr-flink-operator:
+      enabled: true
+      spec:
+        source:
+          helm:
+            ignoreMissingValueFiles: true
+            valueFiles:
+              - "values-prod.yaml"

@@ -1,0 +1,79 @@
+cronjobs:
+  - cmd:
+      - sh
+      - /workdir/pgbadger_report.sh
+      - data-dev-dagobah
+    concurrencyPolicy: Forbid
+    name: pg-badger-data-dev-dagobah
+    resources:
+      limits:
+        cpu: 1
+        memory: 1024Mi
+      requests:
+        cpu: 512m
+        memory: 200Mi
+    schedule: 0 0 * * *
+  - cmd:
+      - sh
+      - /workdir/pgbadger_report.sh
+      - data-dev-endor
+    concurrencyPolicy: Forbid
+    name: pg-badger-data-dev-endor
+    resources:
+      limits:
+        cpu: 1
+        memory: 1024Mi
+      requests:
+        cpu: 512m
+        memory: 200Mi
+    schedule: 0 0 * * *
+  - cmd:
+      - sh
+      - /workdir/pgbadger_report.sh
+      - data-dev-tatooine
+    concurrencyPolicy: Forbid
+    name: pg-badger-data-dev-tatooine
+    resources:
+      limits:
+        cpu: 1
+        memory: 1024Mi
+      requests:
+        cpu: 512m
+        memory: 200Mi
+    schedule: 0 0 * * *
+  - cmd:
+      - sh
+      - /workdir/pgbadger_report.sh
+      - data-staging
+    concurrencyPolicy: Forbid
+    name: pg-badger-data-staging
+    resources:
+      limits:
+        cpu: 1
+        memory: 1024Mi
+      requests:
+        cpu: 512m
+        memory: 200Mi
+    schedule: 0 0 * * *
+image:
+  repository: 284983278621.dkr.ecr.eu-central-1.amazonaws.com/devops-main-pgbadger-reports
+  tag: latest
+serviceAccountName: arn:aws:iam::990075099095:role/preprod_pgbadger_role
+
+security-template-helm:
+  networkPolicies:
+    - name: pgbadger-network-policy
+      enabled: true
+      egress:
+      rules:
+        # -- Access all resources in the cluster
+        - to:
+            - namespaceSelector: {}
+        # -- Access the port 443 from outside the cluster
+        - to:
+            - ipBlock:
+                cidr: 0.0.0.0/0
+          ports:
+            # -- https port
+            - port: 443
+              protocol: TCP

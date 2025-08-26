@@ -1,0 +1,20 @@
+policy-reporter:
+  resources:
+    limits:
+      memory: 1Gi
+    requests:
+      memory: 128Mi
+      cpu: 100m
+
+  plugin:
+    kyverno:
+      enabled: true
+      resources:
+        limits:
+          memory: 30Mi
+        requests:
+          memory: 30Mi
+          cpu: 10m
+
+  monitoring:
+    enabled: true

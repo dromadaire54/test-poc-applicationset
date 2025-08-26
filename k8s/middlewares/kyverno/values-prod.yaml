@@ -1,0 +1,39 @@
+aws:
+  accountId: "284983278621"
+  region: "eu-central-1"
+kyverno:
+  admissionController:
+    rbac:
+      serviceAccount:
+        annotations:
+          eks.amazonaws.com/role-arn: arn:aws:iam::284983278621:role/tiime-prod_kyverno_role
+    replicas: 3
+    serviceMonitor:
+      # -- Create a `ServiceMonitor` to collect Prometheus metrics.
+      enabled: true
+      interval: 60s
+
+  backgroundController:
+    replicas: 3
+    serviceMonitor:
+      # -- Create a `ServiceMonitor` to collect Prometheus metrics.
+      enabled: true
+      interval: 60s
+
+  cleanupController:
+    replicas: 3
+    serviceMonitor:
+      # -- Create a `ServiceMonitor` to collect Prometheus metrics.
+      enabled: true
+      interval: 60s
+
+  reportsController:
+    replicas: 3
+    serviceMonitor:
+      # -- Create a `ServiceMonitor` to collect Prometheus metrics.
+      enabled: true
+      interval: 60s
+
+  policies:
+    cleanupEmptyReplicaSets:
+      enabled: false

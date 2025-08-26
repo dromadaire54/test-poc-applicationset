@@ -1,0 +1,47 @@
+argocd-template-helm:
+  default:
+    spec:
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+
+  argoApps:
+
+    ds-prod:
+      enabled: true
+      finalizer: true
+      appsNameOverride: ds-prod
+      spec:
+        project: data-science
+        source:
+          chart: data-science-helm
+          repoURL: 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+          targetRevision: ">=1.0.0-prod <1.0.0-prod.x"
+          helm:
+            ignoreMissingValueFiles: true
+            valueFiles:
+              - values.yaml
+              - values/deployments.yaml
+              - values/cronjobs.yaml
+              - values/metrics.yaml
+              - values/rabbitmq.yaml
+              - secrets://secrets.yaml
+              - environments/prod/values.yaml
+              - secrets://environments/prod/secrets.yaml
+            parameters:
+              - name: environmentName
+                value: prod
+              - name: serviceAccountName
+                value: "arn:aws:iam::284983278621:role/tiime-prod_issuer_data_role"
+        destination:
+          namespace: ds-prod
+        syncPolicy:
+          automatedEnableDefaultConfig: true
+          syncOptions:
+            - CreateNamespace=true

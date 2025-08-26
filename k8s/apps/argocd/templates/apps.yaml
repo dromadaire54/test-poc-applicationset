@@ -1,0 +1,27 @@
+{{- range $chartName, $key := .Values.argoApps }}
+{{- with $chartName }}
+{{- if $key.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  {{- if hasKey $key "appsNameOverride" }}
+  name: {{ $key.appsNameOverride }}
+  {{- else if hasKey ($key.spec.destination) "namespace" }}
+  name: "{{ $chartName }}-{{ $key.spec.destination.namespace }}"
+  {{- else }}
+  name: "{{ $chartName }}-{{ ($.Values.default.spec.destination).namespace }}"
+  {{- end }}
+  namespace: argocd
+  {{- if ($key.finalizer) }}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  {{- end }}
+  {{- if hasKey $key "annotations" }}
+  annotations:
+  {{ $key.annotations | toYaml | indent 2 }}
+  {{- end }}
+{{ include "argocd.app.spec" (dict "default" $.Values.default "template" $key) }}
+{{- end }}
+{{- end }}
+---
+{{- end }}

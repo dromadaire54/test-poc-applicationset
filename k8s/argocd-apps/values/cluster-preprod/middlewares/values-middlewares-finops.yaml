@@ -1,0 +1,19 @@
+argocd-template-helm:
+  argoApps:
+    kyverno:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values.yaml"
+              - "values-preprod.yaml"
+              - "secrets://values-secret-preprod.yaml"
+
+    kyverno-policy-reporter:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values.yaml"

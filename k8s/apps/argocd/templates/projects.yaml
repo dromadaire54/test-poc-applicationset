@@ -1,0 +1,44 @@
+{{- if .Values.argoProjects }}
+{{- range $name, $key := .Values.argoProjects }}
+{{- with $name }}
+{{- if $key.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  {{- if hasKey $key "projectsNameOverride" }}
+  name: {{ $key.projectsNameOverride }}
+  {{- else }}
+  name: name: {{ $key.name }}
+  {{- end }}
+  namespace: argocd
+  {{- if $key.finalizer }}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  {{- end }}
+spec:
+  description: {{ $key.spec.description | required "The description is required" }}
+  {{- if hasKey $key.spec "sourceRepos" }}
+  sourceRepos:
+  {{- range $key.spec.sourceRepos }}
+    - {{ . }}
+  {{- end }}
+  {{- end }}
+  {{- if hasKey $key.spec "namespacesList" }}
+  destinations:
+  {{- range $key.spec.namespacesList }}
+    - namespace: {{ . }}
+      server: https://kubernetes.default.svc
+  {{- end }}
+  {{- else if hasKey $key.spec "destinations" }}
+  destinations:
+  {{- $key.spec.destinations | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if hasKey $key.spec "clusterResourceWhitelist" }}
+  clusterResourceWhitelist:
+  {{- $key.spec.clusterResourceWhitelist | toYaml | nindent 4 }}
+  {{- end }}
+{{- end }}  
+{{- end }}  
+---
+{{- end }}
+{{- end }}

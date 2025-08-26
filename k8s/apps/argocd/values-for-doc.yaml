@@ -1,0 +1,182 @@
+# values-sample.yaml
+# values file with example
+# # # #
+
+# Default Value for all apps in agroApps
+default:
+  spec:
+    destination:
+      namespace: DefaultNamespace # MANDATORY; Destination Namespace for Apps
+    project: DefaultProject
+    syncPolicy:
+      automated: # OPTIONAL; but if define all subkey must be define for default values (syncPolicy.automated.*)
+        prune: true # Specifies if resources should be pruned during auto-syncing
+        selfHeal: true # Specifies if partial app sync should be executed when resources are changed only in target Kubernetes cluster and no git change detected
+        allowEmpty: true # Allows deleting all application resources during automatic syncing
+      syncOptions: # OPTIONAL; but if define must provide a list
+        - Validate=false # resource validation
+        - CreateNamespace=true # Namespace Auto-Creation
+        - PrunePropagationPolicy=foreground # Supported policies are background, foreground and orphan
+        - PruneLast=true # Allow the ability for resource pruning to happen as a final, implicit wave of a sync operation
+      retry: # OPTIONAL; if retry is set, you must set all subkey
+        limit: 5 # number of failed sync attempt retries; unlimited number of attempts if less than 0
+        backoff:
+          duration: 5s # the amount to back off. Default unit is seconds, but could also be a duration (e.g. "2m", "1h")
+          factor: 2 # a factor to multiply the base duration after each failed retry
+          maxDuration: 3m # the maximum amount of time allowed for the backoff strategy
+
+argoProjects:
+  myArgocdProject:
+    projectsNameOverride: argocd-project
+    enabled: true
+    finalizer: true
+    spec:
+      description: my project description"
+      sourceRepos:
+      - https://github.com/ManakinCubber/chronos-api
+      # -- namespacesList is a list of namespaces from the current cluster that the project can access. Warning: this will override the destinations key
+      namespacesList:
+        - chronos-*
+        - subscription-manager-*
+      clusterResourceWhitelist:
+      - group: ""
+        kind: Namespace
+
+argoAppSets:
+  test: 
+    name: test-{{.env}} # MANDATORY; build fron the element env
+    finalizer: true
+    enabled: true
+    elements:
+    - env: preprod
+      version: ">=1.0.0"
+      auto-sync: true # If a auto-sync key value pair is set a templatePatch will be added  
+    annotations: # OPTIONAL, annotation of the argo apps
+      # https://argo-cd.readthedocs.io/en/stable/user-guide/sync-waves/
+      argocd.argoproj.io/sync-wave: "-5"
+    spec:
+      destination:
+        namespace: test-{{.env}} # namespace build from the element env
+      source:
+        # Chart Repo Example
+        repoURL: "https://example.com/helm-chart"
+        targetRevision: '{{.version}}' # MANDATORY; helm chart version
+        chart: "myChart" # MANDATORY if it's a helm repo
+        helm:
+          skipCrds: true # OPTIONAL; skip crd installation
+          releaseName: myHelmApps-{{.env}}-release # OPTIONAL; by default releaseName = argoApps.name
+          valueFiles: # OPTIONAL; list of values files; values files must be in chart
+            - values-{{.env}}.yaml
+          values: |
+            key: value
+            key.subkey: value
+            foo:
+              bar: toto
+      project: OverridedProject # OPTIONAL; Override default.spec.project
+      syncPolicy:    
+        managedNamespaceMetadata: # OPTIONAL Enable custiomization of labels and annotations to the namespace
+          labels: | # OPTIONAL Add labels to the namespace
+            key: value 
+        syncOptions: # OPTIONAL; Override all the list default.spec.syncPolicy.syncOptions
+          - Validate=true
+        retry: # OPTIONAL; Override default.spec.syncPolicy.retry; if retry is set, you must set all subkey
+          limit: 5 # number of failed sync attempt retries; unlimited number of attempts if less than 0
+          backoff:
+            duration: 5s # the amount to back off. Default unit is seconds, but could also be a duration (e.g. "2m", "1h")
+            factor: 2 # a factor to multiply the base duration after each failed retry
+            maxDuration: 3m # the maximum amount of time allowed for the backoff strategy
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          # ignore annotation checksum/config / => ~1
+          jsonPointers:
+            - /spec/template/metadata/annotations/checksum~1config
+        - group: batch
+          kind: CronJob
+          name: linkerd-heartbeat
+          jsonPointers:
+            - /spec/schedule
+
+argoApps:
+  myGitApps: # MANDATORY; Apps Name; will be .name + "-" + .default.spec.destination.namespace
+    appsNameOverride: myname # OPTIONAL; if set replace Apps Name
+    finalizer: true # Cascade remove when ArgoCD apps is deleted from CLI
+    enabled: true # Generate manisfest for this app ?
+    spec:
+      syncPolicy:
+        automatedEnableDefaultConfig: true
+      source:
+        # repo Git Example
+        repoURL: "https://example.com/repo.git" # MANDATORY
+        targetRevision: "master" # MANDATORY; git branche or git tag
+        path: "." # MANDATORY if it's a git repo
+        directory:
+          recurse: true # OPTIONAL; recurse from path
+  myHelmApps-from-repo-git:
+    finalizer: true
+    enabled: true
+    spec:
+      source:
+        # Chart Repo Example
+        repoURL: "https://example.com/repo.git"
+        targetRevision: "master" # MANDATORY; git branche or git tag
+        path: "mychart" # MANDATORY if it's a git repo
+        helm:
+          valueFiles: # OPTIONAL; list of values files; values files must be available in the path
+            - myvalues.yaml
+          parameters: # OPTIONAL; map of parameters (name and value)
+            - name: param1
+              value: values1
+            - name: param2
+              value: value2
+  myHelmApps-from-repo-helm:
+    finalizer: true
+    enabled: true
+    annotations: # OPTIONAL, annotation of the argo apps
+      # https://argo-cd.readthedocs.io/en/stable/user-guide/sync-waves/
+      argocd.argoproj.io/sync-wave: "-5"
+    spec:
+      source:
+        # Chart Repo Example
+        repoURL: "https://example.com/helm-chart"
+        targetRevision: "1.2.3" # MANDATORY; helm chart version
+        chart: "myChart" # MANDATORY if it's a helm repo
+        helm:
+          skipCrds: true # OPTIONAL; skip crd installation
+          releaseName: myHelmApps-release # OPTIONAL; by default releaseName = argoApps.name
+          valueFiles: # OPTIONAL; list of values files; values files must be in chart
+            - values-dev.yaml
+          values: |
+            key: value
+            key.subkey: value
+            foo:
+              bar: toto
+      project: OverridedProject # OPTIONAL; Override default.spec.project
+      syncPolicy:
+        automatedDefaultConfig: true # OPTIONAL; if true apply all config from default.spec.syncPolicy.automated if spec.syncPolicy.automated do not exist
+        automated: # OPTIONAL; Override default.spec.syncPolicy but if define all subkey must be define for default values (syncPolicy.automated.*)
+          prune: false # Specifies if resources should be pruned during auto-syncing
+          selfHeal: false # Specifies if partial app sync should be executed when resources are changed only in target Kubernetes cluster and no git change detected
+          allowEmpty: false # Allows deleting all application resources during automatic syncing
+        managedNamespaceMetadata: # OPTIONAL Enable custiomization of labels and annotations to the namespace
+          labels: | # OPTIONAL Add labels to the namespace
+            key: value 
+        syncOptions: # OPTIONAL; Override all the list default.spec.syncPolicy.syncOptions
+          - Validate=true
+        retry: # OPTIONAL; Override default.spec.syncPolicy.retry; if retry is set, you must set all subkey
+          limit: 5 # number of failed sync attempt retries; unlimited number of attempts if less than 0
+          backoff:
+            duration: 5s # the amount to back off. Default unit is seconds, but could also be a duration (e.g. "2m", "1h")
+            factor: 2 # a factor to multiply the base duration after each failed retry
+            maxDuration: 3m # the maximum amount of time allowed for the backoff strategy
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          # ignore annotation checksum/config / => ~1
+          jsonPointers:
+            - /spec/template/metadata/annotations/checksum~1config
+        - group: batch
+          kind: CronJob
+          name: linkerd-heartbeat
+          jsonPointers:
+            - /spec/schedule

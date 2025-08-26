@@ -1,0 +1,65 @@
+# -- global variables that should be shared between parent chart and this dependency
+global:
+  organization: tiime.tech
+  maintenance:
+    enabled: false
+  images:
+    php:
+      repository: tiime.tech/tiime/php
+      tag: "0.0.0"
+
+# -- suspend a job if its name is in cronjobsSuspended
+cronjobsSuspended: []
+newRelicSplitEnabled: false
+
+cronjobs:
+  cron1:
+    # -- team that is responsible for the cronjob
+    team: backend
+    # -- command of the cronjob
+    command: ["bin/console"]
+    # --  args for the command of the cronjob
+    args: ["args1"]
+    # -- list of secrets used by the cronjob, default  Release.Name et Release.Name-env-common)
+    secretRef: [secret1, secret2]
+    # -- schedule of the cronjob
+    schedule: '0 0 * * *'
+    # -- timezone of the cronjob
+    timezone: Etc/UTC
+    # -- concurrency policy of the cronjob, default is Allow
+    concurrencyPolicy: Allow
+    # -- in addition to being suspended if cronjob name in cronjobsSuspended, the cronjob will also not be created in kubernetes 
+    deletedIfSuspended: false
+    backoffLimit: 3
+    activeDeadlineSeconds: 3600
+    # -- resources for the cronjob
+    resources:
+      limits:
+        # -- limits resource of the cronjob
+        memory: 500Mi
+      requests:
+        # -- requests resource of the cronjob
+        memory: 500Mi 
+        cpu: 0.25
+    # -- volumeMounts for the cronjob
+    volumeMounts:
+      - name: database-scripts
+        mountPath: /scripts
+    # -- volumes for the cronjob
+    volumes:
+      - name: database-scripts
+        configMap:
+          name: chronos-database-scripts
+          defaultMode: 0500
+    # -- extraspec for the pod if it is different than the default extraspec
+    extraSpec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: extraspec
+                operator: In
+                values:
+                  - arm64
+

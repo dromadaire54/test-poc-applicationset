@@ -1,0 +1,7 @@
+prometheus-elasticsearch-exporter:
+  es:
+    snapshots: true
+  serviceMonitor:
+    enabled: true
+    interval: 300s
+    timeout: 30s

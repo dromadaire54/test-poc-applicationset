@@ -1,0 +1,17 @@
+{{- if and (hasKey .Values "pgbouncer") .Values.pgbouncer.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "database.pgbouncer.name" . }}-servicemonitor
+  labels: {{- include "database.pgbouncer.labels" $ | nindent 4}}
+spec:
+  endpoints:
+  - port: metrics
+    interval: 60s
+  selector:
+    matchLabels:
+      {{- include "database.pgbouncer.selectorLabels" $ | nindent 6}}
+  namespaceSelector:
+    matchNames:
+      - {{ $.Release.Namespace }}
+{{ end }}

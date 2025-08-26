@@ -1,0 +1,221 @@
+argocd-template-helm:
+  argoApps:
+    tiime-headmaster:
+      enabled: false
+      finalizer: false
+      spec:
+        project: ops
+        source:
+          repoURL: "https://github.com/ManakinCubber/tiime-ops.git"
+          path: "./k8s/argocd-apps"
+          targetRevision: "main"
+        destination:
+          namespace: argocd
+        syncPolicy:
+          automatedEnableDefaultConfig: false
+
+    middlewares-tiime-aws:
+      enabled: false
+      finalizer: false
+      spec:
+        project: ops
+        source:
+          repoURL: "https://github.com/ManakinCubber/tiime-ops.git"
+          path: "./k8s/argocd-apps"
+          targetRevision: "main"
+        destination:
+          namespace: argocd
+        syncPolicy:
+          automatedEnableDefaultConfig: false
+
+    middlewares-tiime-finops:
+      enabled: false
+      finalizer: false
+      spec:
+        project: ops
+        source:
+          repoURL: "https://github.com/ManakinCubber/tiime-ops.git"
+          path: "./k8s/argocd-apps"
+          targetRevision: "main"
+        destination:
+          namespace: argocd
+        syncPolicy:
+          automatedEnableDefaultConfig: false
+
+    middlewares-tiime-miscellaneous:
+      enabled: false
+      finalizer: false
+      spec:
+        project: ops
+        source:
+          repoURL: "https://github.com/ManakinCubber/tiime-ops.git"
+          path: "./k8s/argocd-apps"
+          targetRevision: "main"
+        destination:
+          namespace: argocd
+        syncPolicy:
+          automatedEnableDefaultConfig: false
+
+    middlewares-tiime-networking:
+      enabled: false
+      finalizer: false
+      spec:
+        project: ops
+        source:
+          repoURL: "https://github.com/ManakinCubber/tiime-ops.git"
+          path: "./k8s/argocd-apps"
+          targetRevision: "main"
+        destination:
+          namespace: argocd
+        syncPolicy:
+          automatedEnableDefaultConfig: false
+
+    middlewares-tiime-observability:
+      enabled: false
+      finalizer: false
+      spec:
+        project: ops
+        source:
+          repoURL: "https://github.com/ManakinCubber/tiime-ops.git"
+          path: "./k8s/argocd-apps"
+          targetRevision: "main"
+        destination:
+          namespace: argocd
+        syncPolicy:
+          automatedEnableDefaultConfig: false
+
+    middlewares-tiime-qa:
+      enabled: false
+      finalizer: false
+      spec:
+        project: ops
+        source:
+          repoURL: "https://github.com/ManakinCubber/tiime-ops.git"
+          path: "./k8s/argocd-apps"
+          targetRevision: "main"
+        destination:
+          namespace: argocd
+        syncPolicy:
+          automatedEnableDefaultConfig: false
+
+    middlewares-tiime-scaling:
+      enabled: false
+      finalizer: false
+      spec:
+        project: ops
+        source:
+          repoURL: "https://github.com/ManakinCubber/tiime-ops.git"
+          path: "./k8s/argocd-apps"
+          targetRevision: "main"
+        destination:
+          namespace: argocd
+        syncPolicy:
+          automatedEnableDefaultConfig: false
+
+    middlewares-tiime-security:
+      enabled: false
+      finalizer: false
+      spec:
+        project: ops
+        source:
+          repoURL: "https://github.com/ManakinCubber/tiime-ops.git"
+          path: "./k8s/argocd-apps"
+          targetRevision: "main"
+        destination:
+          namespace: argocd
+        syncPolicy:
+          automatedEnableDefaultConfig: false
+
+    middlewares-tiime-web:
+      enabled: false
+      finalizer: false
+      spec:
+        project: ops
+        source:
+          repoURL: "https://github.com/ManakinCubber/tiime-ops.git"
+          path: "./k8s/argocd-apps"
+          targetRevision: "main"
+        destination:
+          namespace: argocd
+        syncPolicy:
+          automatedEnableDefaultConfig: false
+
+    argocd:
+      appsNameOverride: argocd
+      enabled: false
+      finalizer: false
+      annotations:
+        argocd.argoproj.io/sync-wave: "-5"
+      spec:
+        project: ops
+        source:
+          repoURL: "https://github.com/ManakinCubber/tiime-ops.git"
+          path: "./k8s/middlewares/argocd"
+          targetRevision: "main"
+          helm:
+            releaseName: argocd
+        syncPolicy:
+          automatedEnableDefaultConfig: true
+        destination:
+          namespace: argocd
+        ignoreDifferences:
+          - group: ""
+            kind: Secret
+            name: argocd-secret
+            namespace: argocd
+            jsonPointers:
+              - /data/admin.passwordMtime
+              - /data/accounts.data-science.passwordMtime
+
+
+    argocd-project:
+      enabled: false
+      finalizer: false
+      spec:
+        project: ops
+        source:
+          repoURL: "https://github.com/ManakinCubber/tiime-ops.git"
+          path: "./k8s/argocd-apps"
+          targetRevision: "main"
+        syncPolicy:
+          automatedEnableDefaultConfig: true
+        destination:
+          namespace: argocd
+
+    argo-rollout:
+      appsNameOverride: argo-rollout
+      enabled: false
+      finalizer: false
+      annotations:
+        argocd.argoproj.io/sync-wave: "-5"
+      spec:
+        project: ops
+        source:
+          repoURL: "https://github.com/ManakinCubber/tiime-ops.git"
+          path: "./k8s/middlewares/argo-rollout"
+          targetRevision: "main"
+          helm:
+            releaseName: argo-rollout
+        syncPolicy:
+          automatedEnableDefaultConfig: true
+        destination:
+          namespace: argo-rollout
+
+    tiime-system:
+      appsNameOverride: tiime-system
+      enabled: false
+      finalizer: false
+      annotations:
+        argocd.argoproj.io/sync-wave: "-5"
+      spec:
+        project: ops
+        source:
+          repoURL: "https://github.com/ManakinCubber/tiime-ops.git"
+          path: "./k8s/middlewares/tiime-system"
+          targetRevision: "main"
+          helm:
+            releaseName: tiime-system
+        syncPolicy:
+          automatedEnableDefaultConfig: false
+        destination:
+          namespace: kube-system

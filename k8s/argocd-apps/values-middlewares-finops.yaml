@@ -1,0 +1,58 @@
+argocd-template-helm:
+  argoApps:
+    chronos-cleanup-databases:
+      appsNameOverride: chronos-cleanup-databases
+      enabled: false
+      finalizer: true
+      spec:
+        project: ops
+        source:
+          repoURL: "https://github.com/ManakinCubber/tiime-ops.git"
+          path: "./k8s/middlewares/chronos-cleanup-databases"
+          targetRevision: "main"
+          helm:
+            releaseName: chronos-cleanup-databases
+        syncPolicy:
+          automatedEnableDefaultConfig: true
+        destination:
+          namespace: ops
+
+    kyverno:
+      appsNameOverride: kyverno
+      enabled: false
+      finalizer: true
+      annotations:
+        argocd.argoproj.io/sync-wave: "-10"
+      spec:
+        project: ops
+        source:
+          repoURL: "https://github.com/ManakinCubber/tiime-ops.git"
+          path: "./k8s/middlewares/kyverno"
+          targetRevision: "main"
+          helm:
+            releaseName: kyverno
+        syncPolicy:
+          automatedEnableDefaultConfig: true
+          syncOptions:
+            - ServerSideApply=true
+        destination:
+          namespace: kyverno
+
+    kyverno-policy-reporter:
+      appsNameOverride: kyverno-policy-reporter
+      enabled: false
+      finalizer: true
+      annotations:
+        argocd.argoproj.io/sync-wave: "-10"
+      spec:
+        project: ops
+        source:
+          repoURL: "https://github.com/ManakinCubber/tiime-ops.git"
+          path: "./k8s/middlewares/kyverno-policy-reporter"
+          targetRevision: "main"
+          helm:
+            releaseName: kyverno-policy-reporter
+        syncPolicy:
+          automatedEnableDefaultConfig: true
+        destination:
+          namespace: kyverno-policy-reporter

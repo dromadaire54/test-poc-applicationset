@@ -1,0 +1,8 @@
+argo-rollouts:
+  serviceAccount:
+    create: true
+    annotations: 
+      eks.amazonaws.com/role-arn: arn:aws:iam::284983278621:role/tiime-prod_argocd_role
+
+
+

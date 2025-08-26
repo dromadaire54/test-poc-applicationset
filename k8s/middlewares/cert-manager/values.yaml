@@ -1,0 +1,115 @@
+cert-manager:
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - preference:
+            matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                  - arm64
+          weight: 1
+  tolerations:
+    - effect: NoSchedule
+      key: arch
+      operator: Equal
+      value: arm64
+  webhook:
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - preference:
+              matchExpressions:
+                - key: kubernetes.io/arch
+                  operator: In
+                  values:
+                    - arm64
+            weight: 1
+    tolerations:
+      - effect: NoSchedule
+        key: arch
+        operator: Equal
+        value: arm64
+  cainjector:
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - preference:
+              matchExpressions:
+                - key: kubernetes.io/arch
+                  operator: In
+                  values:
+                    - arm64
+            weight: 1
+    tolerations:
+      - effect: NoSchedule
+        key: arch
+        operator: Equal
+        value: arm64
+
+  installCRDs: true
+
+security-template-helm:
+  networkPolicies:
+    - enabled: true
+      name: cert-manager
+      namespace: ingress
+      selector:
+        # -- Only the pod with the following labels are concerned by the network policies
+        matchLabels:
+          app.kubernetes.io/instance: cert-manager
+      egress:
+        rules:
+          # -- Access to the pod which renew the certificate (the pod has a specific labels)
+          - to:
+              - namespaceSelector: {}
+                podSelector:
+                  matchLabels:
+                    acme.cert-manager.io/http01-solver: "true"
+            # -- The certmanager call the port pod on the port 8089 to renew teh certificates
+            ports:
+              - port: 8089 # acme port (renewing certificate)
+                protocol: TCP
+          # -- Access to http, https and dns port to outside the cluster
+          - to:
+              - ipBlock:
+                  cidr: 0.0.0.0/0
+            ports:
+              - port: 443 # https
+                protocol: TCP
+              - port: 80 # http
+                protocol: TCP
+              - port: 53 # dns port (propagate the certificate)
+                protocol: TCP
+          # -- Access to kube dns pod on port 53 UDP
+          - to:
+              - namespaceSelector: {}
+                podSelector:
+                  matchLabels:
+                    k8s-app: coredns
+            ports:
+              # -- dns port
+              - port: 53
+                protocol: UDP
+      ingress:
+        rules:
+          # -- Allow to metrics port from metro namespace
+          - from:
+              - namespaceSelector:
+                  matchLabels:
+                    kubernetes.io/metadata.name: metro
+              - namespaceSelector:
+                  matchLabels:
+                    kubernetes.io/metadata.name: metrology
+            ports:
+              # -- metric cert-manager
+              - port: 9402
+                protocol: TCP
+          # -- Allow to certmanager webhook from outside the cluster
+          - from:
+              - ipBlock:
+                  cidr: 0.0.0.0/0
+            ports:
+              # -- certmanager webhook port
+              - port: 10250
+                protocol: TCP

@@ -1,0 +1,25 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+    name: {{$.Release.Name}}
+    labels:
+        k8s-app: aws-node
+spec:
+    selector:
+        matchLabels:
+            k8s-app: aws-node
+    namespaceSelector:
+        matchNames:
+            - {{$.Release.Namespace}}
+    endpoints:
+        - port: metrics
+          interval: 60s
+          relabelings:
+              - action: labeldrop
+                regex: channel
+          metricRelabelings:
+              - sourceLabels: [__name__]
+                regex: "go_.*"
+                action: drop
+              - regex: channel
+                action: labeldrop

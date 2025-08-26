@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-s3-claim
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: "" # required for static provisioning
+  resources:
+    requests:
+      storage: 1200Gi # ignored, required
+  volumeName: {{ .Release.Name }}-s3-pv

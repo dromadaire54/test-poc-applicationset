@@ -1,0 +1,31 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: stunnel-config
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": "pre-install"
+    "helm.sh/hook-weight": "2"
+data:
+  stunnel.conf: |
+    fips = no
+    setuid = root
+    setgid = root
+    pid = /var/run/stunnel.pid
+    foreground = yes
+    debug = 7 
+    delay = yes
+    options = NO_SSLv2
+    options = NO_SSLv3
+    [clickhouse]
+    client = yes
+    accept = :::9001
+    connect = {{ .Values.stunnel.clickhouse }}:9440
+    [clickhouse-http]
+    client = yes
+    accept = :::8123
+    connect = {{ .Values.stunnel.clickhouse }}:8443
+    [redis]
+    client = yes
+    accept = :::6379
+    connect = {{ .Values.stunnel.redis }}:6379

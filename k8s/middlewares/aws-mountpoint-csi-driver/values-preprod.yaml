@@ -1,0 +1,6 @@
+aws-mountpoint-s3-csi-driver:
+  node:
+    serviceAccount:
+      annotations:
+        eks.amazonaws.com/role-arn: arn:aws:iam::990075099095:role/preprod_aws_mountpoint_csi_driver_role
+

@@ -1,0 +1,5 @@
+cronjobsSuspended: []
+newRelicSplitEnabled: false
+
+global:
+  organization: tiime.tech

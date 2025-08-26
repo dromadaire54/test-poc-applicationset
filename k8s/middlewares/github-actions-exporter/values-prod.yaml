@@ -1,0 +1,43 @@
+github-actions-exporter:
+  image:
+    repository: ghcr.io/labbs/github-actions-exporter
+    tag: "1.9.0" # https://github.com/Labbs/github-actions-exporter/issues/82
+  serviceMonitor:
+    enabled: true
+    interval: 60s
+    timeout: 10s
+    metricRelabelings:
+      - sourceLabels: [__name__]
+        regex: "github_workflow_usage_seconds.*"
+        action: drop
+      - sourceLabels: [__name__]
+        regex: "github_workflow_run_status.*"
+        action: drop
+      - sourceLabels: [__name__]
+        regex: "github_deployments_duration.*"
+        action: drop
+      - sourceLabels: [__name__]
+        regex: "github_runner_status.*"
+        action: drop
+      - sourceLabels: [__name__]
+        regex: "github_runner_organization_status.*"
+        action: drop
+  env:
+    GITHUB_ORGAS: "ManakinCubber"
+    GITHUB_REFRESH: 30
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                  - amd64
+
+  resources:
+    limits:
+      memory: 200Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi

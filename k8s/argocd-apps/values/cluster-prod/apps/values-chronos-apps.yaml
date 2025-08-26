@@ -1,0 +1,281 @@
+argocd-template-helm:
+  default:
+    spec:
+      project: chronos
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+
+  argoApps:
+    base-tiers-api:
+      enabled: true
+      finalizer: true
+      appsNameOverride: base-tiers-api
+      spec:
+        project: chronos
+        source:
+          chart: base-tiers-api-helm
+          repoURL: 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+          targetRevision: ">=1.0.0"
+          helm:
+            ignoreMissingValueFiles: true
+            valueFiles:
+              - values.yaml
+              - values-cronjob.yaml
+              - secrets://environments/prod/secrets.yaml
+              - environments/prod/values.yaml
+        destination:
+          namespace: base-tiers-api
+        syncPolicy:
+          automatedEnableDefaultConfig: true
+
+    chronos-production:
+      appsNameOverride: chronos-production
+      enabled: true
+      finalizer: true
+      spec:
+        project: chronos
+        source:
+          repoURL: https://github.com/ManakinCubber/chronos-api
+          targetRevision: master
+          path: docker/helm
+          helm:
+            releaseName: chronos-production
+            parameters:
+              - name: environmentName
+                value: production
+            ignoreMissingValueFiles: true
+            valueFiles:
+              - values.yaml
+              - values-api.yaml
+              - common-values-cronjobs.yaml
+              - common-values-rabbitmq.yaml
+              - common-values-workers.yaml
+              - Product/Accounting/Expert/values-cronjobs.yaml
+              - Product/Accounting/Expert/values-rabbitmq.yaml
+              - Product/Accounting/Expert/values-workers.yaml
+              - Product/Accounting/GI/values-cronjobs.yaml
+              - Product/Accounting/GI/values-rabbitmq.yaml
+              - Product/Accounting/GI/values-workers.yaml
+              - Product/Accounts/values-cronjobs.yaml
+              - Product/Accounts/values-rabbitmq.yaml
+              - Product/Accounts/values-workers.yaml
+              - Product/BusinessAccount/values-cronjobs.yaml
+              - Product/BusinessAccount/values-rabbitmq.yaml
+              - Product/BusinessAccount/values-workers.yaml
+              - Product/Data/values-cronjobs.yaml
+              - Product/Data/values-rabbitmq.yaml
+              - Product/Data/values-workers.yaml
+              - Product/Invoice/values-cronjobs.yaml
+              - Product/Invoice/values-rabbitmq.yaml
+              - Product/Invoice/values-workers.yaml
+              - Product/Legal/values-cronjobs.yaml
+              - Product/Legal/values-rabbitmq.yaml
+              - Product/Legal/values-workers.yaml
+              - Product/Protect/values-cronjobs.yaml
+              - Product/Protect/values-rabbitmq.yaml
+              - Product/Protect/values-workers.yaml
+              - Product/Desk/values-cronjobs.yaml
+              - Product/Desk/values-rabbitmq.yaml
+              - Product/Desk/values-workers.yaml
+              - secrets://environnements/production/secrets.yaml
+              - environnements/production/config.yaml
+        destination:
+          namespace: chronos-production
+        syncPolicy:
+          managedNamespaceMetadata:
+            labels:
+              elbv2.k8s.aws/pod-readiness-gate-inject: enabled
+          syncOptions:
+            - CreateNamespace=true
+            - PruneLast=true
+        ignoreDifferences:
+          - jqPathExpressions:
+              - .data
+            kind: ConfigMap
+            name: chronos-production-database-config
+          - jqPathExpressions:
+              - .data
+            kind: ConfigMap
+            name: audit-database-config
+          - jqPathExpressions:
+              - .data
+            kind: ConfigMap
+            name: licence-database-config
+          - jqPathExpressions:
+              - .spec.replicas
+            kind: Deployment
+            name: newrelic-main
+            group: apps
+
+    subscription-manager-production:
+      enabled: true
+      finalizer: true
+      appsNameOverride: subscription-manager-production
+      spec:
+        project: chronos
+        source:
+          chart: subscription-manager-helm
+          repoURL: 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+          targetRevision: ">=1.0.0"
+          helm:
+            valueFiles:
+              - values.yaml
+              - values-cronjobs.yaml
+              - secrets://environments/production/secrets.yaml
+              - environments/production/values.yaml
+            ignoreMissingValueFiles: true
+            parameters:
+              - name: environmentName
+                value: production
+        syncPolicy:
+          automatedEnableDefaultConfig: true
+        destination:
+          namespace: subscription-manager-production
+        ignoreDifferences:
+          - jqPathExpressions:
+              - .data
+            kind: ConfigMap
+            name: database-config
+
+    gem-production:
+      enabled: true
+      finalizer: true
+      appsNameOverride: gem-production
+      spec:
+        project: chronos
+        source:
+          chart: gem-helm
+          repoURL: 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+          targetRevision: ">=1.0.0"
+          helm:
+            valueFiles:
+              - values.yaml
+              - secrets://environments/production/secrets.yaml
+              - environments/production/values.yaml
+            parameters:
+              - name: environmentName
+                value: production
+        syncPolicy:
+          automatedEnableDefaultConfig: true
+        destination:
+          namespace: gem-production
+        ignoreDifferences:
+          - jqPathExpressions:
+              - .data
+            kind: ConfigMap
+            name: database-config
+
+    hermes-production:
+      enabled: true
+      finalizer: true
+      appsNameOverride: hermes-production
+      spec:
+        project: chronos
+        source:
+          chart: hermes-helm
+          repoURL: 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+          targetRevision: ">=1.0.0"
+          helm:
+            ignoreMissingValueFiles: true
+            valueFiles:
+              - values.yaml
+              - secrets://environments/production/secrets.yaml
+              - environments/production/values.yaml
+            parameters:
+              - name: environmentName
+                value: production
+              - name: serviceAccountArn
+                value: "arn:aws:iam::284983278621:role/tiime-prod_hermes_prod_role"
+        syncPolicy:
+          automatedEnableDefaultConfig: true
+        destination:
+          namespace: hermes-production
+
+    chronos-school:
+      appsNameOverride: chronos-school
+      enabled: true
+      finalizer: true
+      spec:
+        project: chronos
+        source:
+          repoURL: https://github.com/ManakinCubber/chronos-api
+          targetRevision: master
+          path: docker/helm
+          helm:
+            releaseName: chronos-school
+            autoUpdateForImages:
+              - apps=284983278621.dkr.ecr.eu-west-1.amazonaws.com/chronos-web-main-apps:latest
+              - data=284983278621.dkr.ecr.eu-west-1.amazonaws.com/chronos-web-main-data:school-latest
+              - expert=284983278621.dkr.ecr.eu-west-1.amazonaws.com/chronos-web-main-expert:school-latest
+              - pro=284983278621.dkr.ecr.eu-west-1.amazonaws.com/chronos-web-main-pro:school-latest
+              - care=284983278621.dkr.ecr.eu-west-1.amazonaws.com/chronos-web-main-care:school-latest
+            parameters:
+              - name: environmentName
+                value: school
+              - name: serviceAccountName
+                value: "arn:aws:iam::284983278621:role/tiime-prod_chronos_role"
+            ignoreMissingValueFiles: true
+            valueFiles:
+              - values.yaml
+              - values-api.yaml
+              - values-webs.yaml
+              - common-values-cronjobs.yaml
+              - common-values-rabbitmq.yaml
+              - common-values-workers.yaml
+              - Product/Accounting/Expert/values-cronjobs.yaml
+              - Product/Accounting/Expert/values-rabbitmq.yaml
+              - Product/Accounting/Expert/values-workers.yaml
+              - Product/Accounting/GI/values-cronjobs.yaml
+              - Product/Accounting/GI/values-rabbitmq.yaml
+              - Product/Accounting/GI/values-workers.yaml
+              - Product/Accounts/values-cronjobs.yaml
+              - Product/Accounts/values-rabbitmq.yaml
+              - Product/Accounts/values-workers.yaml
+              - Product/BusinessAccount/values-cronjobs.yaml
+              - Product/BusinessAccount/values-rabbitmq.yaml
+              - Product/BusinessAccount/values-workers.yaml
+              - Product/Data/values-cronjobs.yaml
+              - Product/Data/values-rabbitmq.yaml
+              - Product/Data/values-workers.yaml
+              - Product/Invoice/values-cronjobs.yaml
+              - Product/Invoice/values-rabbitmq.yaml
+              - Product/Invoice/values-workers.yaml
+              - Product/Legal/values-cronjobs.yaml
+              - Product/Legal/values-rabbitmq.yaml
+              - Product/Legal/values-workers.yaml
+              - Product/Protect/values-cronjobs.yaml
+              - Product/Protect/values-rabbitmq.yaml
+              - Product/Protect/values-workers.yaml
+              - Product/Desk/values-cronjobs.yaml
+              - Product/Desk/values-rabbitmq.yaml
+              - Product/Desk/values-workers.yaml
+              - environnements/common/common_color_config.yaml
+              - secrets://environnements/school/secrets.yaml
+              - environnements/school/config.yaml
+        ignoreDifferences:
+          - jqPathExpressions:
+              - .data
+            kind: ConfigMap
+            name: chronos-school-database-config
+          - jqPathExpressions:
+              - .data
+            kind: ConfigMap
+            name: audit-database-config
+          - jqPathExpressions:
+              - .data
+            kind: ConfigMap
+            name: licence-database-config
+          - jqPathExpressions:
+              - .spec.replicas
+            kind: Deployment
+            name: newrelic-main
+            group: apps
+        destination:
+          namespace: chronos-school

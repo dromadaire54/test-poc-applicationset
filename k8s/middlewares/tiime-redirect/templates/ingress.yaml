@@ -1,0 +1,44 @@
+{{- range $key, $dest := $.Values.redirects }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    kubernetes.io/ingress.class: nginx
+    {{ $urls := list "receipt.tiime.fr" "accounts.tiime.fr" "invoice.tiime.fr" "invoice-dev.tiime.fr" "invoice-preprod.tiime.fr" "receipt-dev.tiime.fr" "receipt-preprod.tiime.fr"}}
+    {{- if has $key $urls }}
+    nginx.ingress.kubernetes.io/server-snippet: |
+      if ($request_uri !~* ^/.well-known) {
+        return 301 $scheme://{{$dest}};
+      }
+    {{- else }}
+    nginx.ingress.kubernetes.io/permanent-redirect: $scheme://{{$dest}}$request_uri
+    {{- end }}
+  name: {{$key | replace "." "-" | replace "*" "wildecard"}}-redirect
+spec:
+  tls:
+  - hosts:
+    - {{$key|quote}}
+    secretName: {{$key | replace "." "-" | replace "*" "wildecard"}}-tls
+  rules:
+  - host: {{$key|quote}}
+    {{- if has $key $urls }}
+    http:
+      paths:
+      - path: /.well-known/assetlinks.json
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ $.Release.Name }}-links-service
+            port:
+              number: 8080
+      - path: /.well-known/apple-app-site-association
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ $.Release.Name }}-links-service
+            port:
+              number: 8080
+    {{- end }}
+{{- end }}

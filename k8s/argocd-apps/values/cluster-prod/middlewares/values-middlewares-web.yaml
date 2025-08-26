@@ -1,0 +1,54 @@
+argocd-template-helm:
+  argoApps:
+    cert-manager:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values.yaml"
+              - "values-prod.yaml"
+
+    cert-manager-cluster-issuer:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values-prod.yaml"
+
+    external-dns:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values.yaml"
+              - "values-prod.yaml"
+
+    ingress-nginx:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values-prod.yaml"
+        syncPolicy:
+          automatedEnableDefaultConfig: false
+
+    mercure:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values.yaml"
+              - "values-prod.yaml"
+              - "secrets://values-secret-prod.yaml"
+    gotenberg:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values.yaml"

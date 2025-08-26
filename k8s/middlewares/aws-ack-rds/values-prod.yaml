@@ -1,0 +1,11 @@
+rds-chart:
+
+  deployment:
+    replicas: 0
+
+  aws:
+    region: eu-central-1
+  serviceAccount:
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::284983278621:role/tiime-prod_ack_role
+

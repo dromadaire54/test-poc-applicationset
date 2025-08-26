@@ -1,0 +1,6 @@
+apiVersion: v2
+name: argocd-template-helm
+description: Tiime template ArgoCD apps
+type: application
+version: 1.0.3
+appVersion: "1.0.3"

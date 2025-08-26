@@ -1,0 +1,36 @@
+uptimerobot-operator:
+  disableIngressHandling: true
+
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                  - amd64
+  resources:
+    requests:
+      memory: "100Mi"
+      cpu: 1m
+    limits:
+      memory: "300Mi"
+
+security-template-helm:
+  networkPolicies:
+    - name: uptimerobot-operator-network-policy
+      enabled: true
+      egress:
+        rules:
+          - {}
+      ingress:
+        rules:
+          - from:
+              - podSelector: {}
+          - from:
+              - ipBlock:
+                  cidr: 0.0.0.0/0
+            ports:
+              - port: 8080
+                protocol: TCP

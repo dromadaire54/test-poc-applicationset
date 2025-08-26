@@ -1,0 +1,105 @@
+argocd-template-helm:
+  default:
+    spec:
+      project: hub
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+
+  argoApps:
+    tiime-hub-prod:
+      enabled: true
+      finalizer: true
+      appsNameOverride: tiime-hub-prod
+      spec:
+        source:
+          repoURL: 'https://github.com/ManakinCubber/tiime-hub.git'
+          path: kubernetes/tiime-hub
+          targetRevision: prod
+          helm:
+            valueFiles:
+              - environments/prod/values.yaml
+              - secrets://environments/prod/secrets.yaml
+            parameters:
+              - name: environmentName
+                value: prod
+              - name: serviceAccountName
+                value: 'arn:aws:iam::284983278621:role/tiime-prod_issuer_tiime_hub_role'
+        destination:
+          namespace: tiime-hub-production
+
+    hub-prod:
+      enabled: true
+      finalizer: true
+      appsNameOverride: hub-prod
+      spec:
+        source:
+          chart: hub-helm
+          repoURL: 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+          targetRevision: ">=1.0.0"
+          helm:
+            valueFiles:
+              - values.yaml
+              - environments/prod/config.yaml
+              - secrets://environments/prod/secrets.yaml
+              - environments/prod/values.yaml
+            parameters:
+              - name: environmentName
+                value: prod
+        syncPolicy:
+          automatedEnableDefaultConfig: true
+        destination:
+          namespace: hub-prod
+    
+    hub-php-school:
+      enabled: true
+      finalizer: true
+      appsNameOverride: hub-php-school
+      spec:
+        source:
+          chart: hub-helm
+          repoURL: 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+          targetRevision: ">=1.0.0"
+          helm:
+            valueFiles:
+              - values.yaml
+              - environments/school/config.yaml
+              - secrets://environments/school/secrets.yaml
+              - environments/school/values.yaml
+
+            parameters:
+              - name: environmentName
+                value: school
+        syncPolicy:
+          automatedEnableDefaultConfig: true
+        destination:
+          namespace: hub-php-school
+          
+    hub-numbr-prod:
+      enabled: true
+      finalizer: true
+      appsNameOverride: hub-numbr-prod
+      spec:
+        source:
+          chart: hub-helm
+          repoURL: 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+          targetRevision: ">=1.0.0"
+          helm:
+            valueFiles:
+              - values.yaml
+              - environments/numbr/config.yaml
+              - secrets://environments/numbr/secrets.yaml
+              - environments/numbr/values.yaml
+            parameters:
+              - name: environmentName
+                value: numbr
+        syncPolicy:
+          automatedEnableDefaultConfig: true
+        destination:
+          namespace: hub-numbr-prod

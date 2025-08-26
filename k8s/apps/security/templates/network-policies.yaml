@@ -1,0 +1,42 @@
+{{- range $i, $netpol := .Values.networkPolicies }}
+{{- if and (hasKey $netpol "enabled") ($netpol.enabled) }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  {{- if hasKey $netpol "name" }}
+  name: {{ $netpol.name | required "The network policy name is required" }} 
+  {{- end }}
+  {{- if hasKey $netpol "namespace" }}
+  namespace: {{ $netpol.namespace }}
+  {{- else }}
+  namespace: {{ $.Release.Namespace }}
+  {{- end }}
+spec:
+  {{- if hasKey $netpol "selector" }}
+  podSelector:
+  {{ toYaml $netpol.selector | nindent 4 }}
+  {{- else }}
+  podSelector: {}
+  {{- end }}
+  policyTypes:
+    {{- if hasKey $netpol "ingress" }}
+    - Ingress
+    {{- end }}
+    {{- if hasKey $netpol "egress" }}
+    - Egress
+    {{- end }}
+  {{- if hasKey $netpol "egress" }}
+  egress:
+  {{- if hasKey $netpol.egress "rules" }}
+    {{ toYaml $netpol.egress.rules | nindent 4 }}
+  {{- end }}
+  {{- end }}
+  {{- if hasKey $netpol "ingress" }}
+  ingress:
+  {{- if hasKey $netpol.ingress "rules" }}
+    {{ toYaml $netpol.ingress.rules | nindent 4 }}
+  {{- end }}
+  {{- end }}
+{{- end }}
+---
+{{- end }}

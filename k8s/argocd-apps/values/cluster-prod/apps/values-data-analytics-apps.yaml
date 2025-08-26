@@ -1,0 +1,71 @@
+argocd-template-helm:
+  default:
+    spec:
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+
+  argoApps:
+    analytics-appfollow:
+      appsNameOverride: analytics-appfollow
+      enabled: true
+      finalizer: true
+      spec:
+        project: data-analytics
+        source:
+          chart: analytics-appfollow-helm
+          repoURL: 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+          targetRevision: ">=1.0.0"
+          helm:
+            valueFiles:
+              - secrets://values-secret-prod.yaml
+            releaseName: analytics-appfollow
+        destination:
+          namespace: data-analytics-prod
+        syncPolicy:
+          automatedEnableDefaultConfig: true
+
+    analytics-tableau:
+      appsNameOverride: analytics-tableau
+      enabled: true
+      finalizer: true
+      spec:
+        project: data-analytics
+        source:
+          chart: analytics-tableau-helm
+          repoURL: 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+          targetRevision: ">=1.0.0"
+          helm:
+            valueFiles:
+              - secrets://values-secrets-prod.yaml
+            releaseName: analytics-tableau
+        destination:
+          namespace: data-analytics-prod
+        syncPolicy:
+          automatedEnableDefaultConfig: true
+
+    smiirl:
+      appsNameOverride: smiirl
+      enabled: true
+      finalizer: true
+      spec:
+        project: data-analytics
+        source:
+          chart: smiirl-helm
+          repoURL: 851725266353.dkr.ecr.eu-central-1.amazonaws.com
+          targetRevision: ">=1.0.0"
+          helm:
+            releaseName: smiirl
+            valueFiles:
+              - values.yaml
+              - secrets://values-secret.yaml
+        destination:
+          namespace: miscellaneous-tiime-services
+        syncPolicy:
+          automatedEnableDefaultConfig: true

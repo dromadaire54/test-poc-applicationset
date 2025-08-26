@@ -1,0 +1,58 @@
+# -- global variables that should be shared between parent chart and this dependency
+global:
+  organization: tiime.tech
+  maintenance:
+    enabled: false
+  images:
+    php:
+      repository: tiime.tech/tiime/php
+      tag: "0.0.0"
+
+workers:
+  worker1:
+    # -- team of the worker
+    team: backend
+    # -- command of the worker
+    command: ["bin/console"]
+    # --  args of the worker
+    args: ["args1"]
+    # -- queueName of the worker
+    queueName: queue_name 
+    # -- kind of the worker, messenger or swarrot
+    kind: messenger
+    # -- max message a worker can process
+    maxMessage: 50
+    # -- enable autoscaling, the default is rabbitmq
+    autoscaling:
+      postgresql:
+        # -- activate postgresql scaledobject trigger (default rabbitmq)
+        enabled: false  
+      cron:
+        # -- activate cron scaledobject trigger (default rabbitmq) [doc](https://www.notion.so/tiime/Allumer-Eteindre-des-workers-suivant-certaines-heures-1ee299eb35fa809ebd21cd826191cf03)
+        enabled: false 
+      queueValue: 100
+      queueActivationValue: 0
+    # -- number max of replicas
+    maxReplicaCount: 5
+    # -- list of secrets used by the worker, default  Release.Name et Release.Name-env-common)
+    secretRef: [secret1, secret2]
+    resources:
+      limits:
+        # -- limits resource of the worker
+        memory: 512Mi
+      requests:
+        # -- requests resource of the worker
+        memory: 512Mi 
+        cpu: 0.25
+    # -- extraspec for the pod if it is different than the default extraspec
+    extraSpec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: extraspec
+                operator: In
+                values:
+                  - arm64
+

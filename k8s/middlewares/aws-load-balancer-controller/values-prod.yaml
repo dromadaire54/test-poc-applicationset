@@ -1,0 +1,14 @@
+aws-load-balancer-controller:
+  clusterName: tiime-prod
+  region: eu-central-1
+  repository: 602401143452.dkr.ecr.eu-central-1.amazonaws.com/amazon/aws-load-balancer-controller
+  serviceAccount:
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::284983278621:role/tiime-prod_aws_load_balancer_controller_role
+
+  objectSelector:
+    matchExpressions:
+        - key: elbv2.k8s.aws/pod-readiness-gate-inject
+          operator: In
+          values:
+            - enabled

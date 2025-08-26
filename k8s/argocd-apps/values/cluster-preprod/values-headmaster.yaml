@@ -1,0 +1,273 @@
+argocd-template-helm:
+  argoApps:
+    # The headmaster umbrella chart
+    tiime-headmaster:
+      appsNameOverride: tiime-headmaster
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values-default-settings.yaml"
+              - "values-headmaster.yaml"
+              - "values/cluster-preprod/values-headmaster.yaml"
+
+    # Apps umbrella charts
+    chronos-apps:
+      appsNameOverride: chronos-apps-preprod
+      enabled: true
+      finalizer: false
+      spec:
+        project: ops
+        source:
+          repoURL: "https://github.com/ManakinCubber/tiime-ops.git"
+          path: "./k8s/argocd-apps"
+          targetRevision: "main"
+          helm:
+            valueFiles:
+              - "values/cluster-preprod/apps/values-chronos-apps.yaml"
+        syncPolicy:
+          automatedEnableDefaultConfig: false
+        destination:
+          namespace: argocd
+        ignoreDifferences:
+        - kind: "Application"
+          group: "*"
+          jqPathExpressions:
+          - ".spec.source.helm.parameters"
+        - jqPathExpressions:
+          - .spec.replicas
+          kind: Deployment
+          name: newrelic-main
+          group: apps
+
+    data-apps:
+      appsNameOverride: data-apps-preprod
+      enabled: true
+      finalizer: false
+      spec:
+        project: ops
+        source:
+          repoURL: "https://github.com/ManakinCubber/tiime-ops.git"
+          path: "./k8s/argocd-apps"
+          targetRevision: "main"
+          helm:
+            ignoreMissingValueFiles: true
+            valueFiles:
+              - "values/cluster-preprod/apps/values-data-science-apps.yaml"
+              - "values/cluster-preprod/apps/values-data-analytics-apps.yaml"
+              - "values/cluster-preprod/apps/values-data-engineering-apps.yaml"
+        syncPolicy:
+          automatedEnableDefaultConfig: false
+        destination:
+          namespace: argocd
+        ignoreDifferences:
+        - group: "*"
+          kind: "Application"
+          jqPathExpressions:
+          - .spec.source.helm.parameters
+          - .spec.source.targetRevision
+
+    hub-apps:
+      appsNameOverride: hub-apps-preprod
+      enabled: true
+      finalizer: false
+      spec:
+        project: ops
+        source:
+          repoURL: "https://github.com/ManakinCubber/tiime-ops.git"
+          path: "./k8s/argocd-apps"
+          targetRevision: "main"
+          helm:
+            valueFiles:
+              - "values/cluster-preprod/apps/values-hub-apps.yaml"
+        syncPolicy:
+          automatedEnableDefaultConfig: false
+        destination:
+          namespace: argocd
+        ignoreDifferences:
+        - kind: "Application"
+          group: "*"
+          jqPathExpressions:
+          - ".spec.source.helm.parameters"
+            
+    llm-apps:
+      appsNameOverride: llm-apps-preprod
+      enabled: true
+      finalizer: false
+      spec:
+        project: ops
+        source:
+          repoURL: "https://github.com/ManakinCubber/tiime-ops.git"
+          path: "./k8s/argocd-apps"
+          targetRevision: "main"
+          helm:
+            valueFiles:
+              - "values/cluster-preprod/apps/values-llm-apps.yaml"
+        syncPolicy:
+          automatedEnableDefaultConfig: true
+        destination:
+          namespace: argocd
+        ignoreDifferences:
+        - kind: "Application"
+          group: "*"
+          jqPathExpressions:
+          - ".spec.source.helm.parameters"
+
+    web-apps:
+      appsNameOverride: web-apps-preprod
+      enabled: true
+      finalizer: false
+      spec:
+        project: ops
+        source:
+          repoURL: "https://github.com/ManakinCubber/tiime-ops.git"
+          path: "./k8s/argocd-apps"
+          targetRevision: "main"
+          helm:
+            valueFiles:
+              - "values/cluster-preprod/apps/values-web-apps.yaml"
+        syncPolicy:
+          automatedEnableDefaultConfig: false
+        destination:
+          namespace: argocd
+        ignoreDifferences:
+        - kind: "Application"
+          group: "*"
+          jqPathExpressions:
+          - ".spec.source.helm.parameters"
+
+    # Middlewares Umbrella charts
+    middlewares-tiime-aws:
+      appsNameOverride: middlewares-tiime-aws
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values-default-settings.yaml"
+              - "values-middlewares-aws.yaml"
+              - "values/cluster-preprod/middlewares/values-middlewares-aws.yaml"
+
+    middlewares-tiime-finops:
+      appsNameOverride: middlewares-tiime-finops
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values-default-settings.yaml"
+              - "values-middlewares-finops.yaml"
+              - "values/cluster-preprod/middlewares/values-middlewares-finops.yaml"
+
+    middlewares-tiime-miscellaneous:
+      appsNameOverride: middlewares-tiime-miscellaneous
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values-default-settings.yaml"
+              - "values-middlewares-miscellaneous.yaml"
+              - "values/cluster-preprod/middlewares/values-middlewares-miscellaneous.yaml"
+
+    middlewares-tiime-networking:
+      appsNameOverride: middlewares-tiime-networking
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values-default-settings.yaml"
+              - "values-middlewares-networking.yaml"
+              - "values/cluster-preprod/middlewares/values-middlewares-networking.yaml"
+
+    middlewares-tiime-observability:
+      appsNameOverride: middlewares-tiime-observability
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values-default-settings.yaml"
+              - "values-middlewares-observability.yaml"
+              - "values/cluster-preprod/middlewares/values-middlewares-observability.yaml"
+
+    middlewares-tiime-qa:
+      appsNameOverride: middlewares-tiime-qa
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values-default-settings.yaml"
+              - "values-middlewares-qa.yaml"
+              - "values/cluster-preprod/middlewares/values-middlewares-qa.yaml"
+
+    middlewares-tiime-scaling:
+      appsNameOverride: middlewares-tiime-scaling
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values-default-settings.yaml"
+              - "values-middlewares-scaling.yaml"
+              - "values/cluster-preprod/middlewares/values-middlewares-scaling.yaml"
+
+    middlewares-tiime-security:
+      appsNameOverride: middlewares-tiime-security
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values-default-settings.yaml"
+              - "values-middlewares-security.yaml"
+              - "values/cluster-preprod/middlewares/values-middlewares-security.yaml"
+
+    middlewares-tiime-web:
+      appsNameOverride: middlewares-tiime-web
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values-default-settings.yaml"
+              - "values-middlewares-web.yaml"
+              - "values/cluster-preprod/middlewares/values-middlewares-web.yaml"
+
+    # # Middlewares in the headmaster umbrella chart
+    argocd:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "secrets://values-secret-preprod.yaml"
+              - "values.yaml"
+              - "values-rbac-preprod.yaml"
+              - "values-preprod.yaml"
+
+    argocd-project:
+      appsNameOverride: argocd-projects-preprod
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values-projects.yaml"
+              - "values-default-settings.yaml"
+              - "values/cluster-preprod/values-projects.yaml"
+
+    argo-rollout:
+      enabled: true
+      spec:
+        source:
+          helm:
+            valueFiles:
+              - "values.yaml"
+              - "values-preprod.yaml"
+
+    tiime-system:
+      enabled: true

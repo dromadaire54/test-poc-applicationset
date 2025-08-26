@@ -1,0 +1,66 @@
+teleport-kube-agent:
+  tolerations:
+    - key: "arch"
+      operator: "Equal"
+      value: "arm64"
+      effect: "NoSchedule"
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 1
+          preference:
+            matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                  - arm64
+  resources:
+    requests:
+      memory: 1Gi
+      cpu: 500m
+    limits:
+      memory: 1Gi
+
+security-template-helm:
+  networkPolicies:
+    - name: teleport-agent-network-policy
+      enabled: true
+      egress:
+        rules:
+          # -- Access all resources
+          - {}
+
+      ingress:
+        rules:
+          # -- Allow all pods in the same namespace
+          - from:
+              - podSelector: {}
+          # -- Allow the ingress port and the teleport used port from outside
+          - from:
+              - ipBlock:
+                  cidr: 0.0.0.0/0
+            ports:
+              # -- https
+              - port: 443
+                protocol: TCP
+              # -- app port
+              - port: 3000
+                protocol: TCP
+              # -- SSH port clients connect to
+              - port: 3023
+                protocol: TCP
+              # -- HTTPS traffic to a Kubernetes API server
+              - port: 3026
+                protocol: TCP
+              # -- SSH port used to create reverse SSH tunnels (AuthService)
+              - port: 3024
+                protocol: TCP
+              # -- Traffic to MySQL databases.
+              - port: 3036
+                protocol: TCP
+              # -- TLS port used by the Auth Service (GRPC)
+              - port: 3025
+                protocol: TCP
+              # -- HTTPS connection to authenticate tsh users into the cluster
+              - port: 3080
+                protocol: TCP

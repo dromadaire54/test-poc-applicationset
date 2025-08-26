@@ -1,0 +1,21 @@
+gateway-helm:
+  config:
+    envoyGateway:
+      logging:
+        level:
+          default: info  
+  deployment:
+    replicas: 2
+    pod:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                  - arm64
+                  
+  createNamespace: true
+

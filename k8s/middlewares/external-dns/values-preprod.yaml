@@ -1,0 +1,24 @@
+external-dns:
+  domainFilters:
+  - preprod.tiime.tech
+  - sandbox.tiime.tech
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+  policy: sync
+  provider: aws
+  aws:
+    zoneMatchParent: true
+    assumeRoleArn: arn:aws:iam::851725266353:role/shared_dns_role
+  serviceAccount:
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::990075099095:role/preprod_eks_external_dns_role
+  sources:
+  - gateway-httproute
+  - gateway-tlsroute
+  - gateway-tcproute
+  - gateway-udproute
+  - service
+  - ingress
+  txtOwnerId: preprod

@@ -1,0 +1,46 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: demo-appset
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions:
+  - missingkey=error
+  generators:
+    - matrix:
+        generators:
+        - git:
+            repoURL: https://github.com/dromadaire54/test-poc-applicationset.git
+            revision: main
+            files:
+            - path: argocd-apps/values/cluster-preprod/middlewares-config.yaml
+        - list:
+            elements: []
+            elementsYaml: "{{ `{{ .middlewares | toJson }}` }}"
+  template:
+    metadata:
+      name: 'middlewares-tiime-{{ `{{.name}}` }}'
+    spec:
+      project: 'default'
+      syncPolicy:
+        syncOptions:
+        - CreateNamespace=true
+      sources:
+        - path: '/k8s/argocd-apps'
+          repoURL: 'https://github.com/dromadaire54/test-poc-applicationset.git'
+          helm:
+            valueFiles:
+              - "values-default-settings.yaml"
+              - "values-middlewares-{{ `{{.name}}` }}.yaml"
+              - "values/cluster-preprod/middlewares/values-middlewares-{{ `{{.name}}` }}.yaml"
+      destination:
+        namespace: 'argocd'
+        server: 'https://kubernetes.default.svc'
+  templatePatch: |
+    {{- if .autosync }}
+    spec:
+     syncPolicy: :
+        automated: {}
+    {{- end }}
+---

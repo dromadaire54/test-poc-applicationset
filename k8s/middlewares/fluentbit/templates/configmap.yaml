@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: custom-luascripts
+data:
+  chronos_filters.lua: |
+    {{ .Files.Get "files/chronos_filters.lua" | nindent 4 }}

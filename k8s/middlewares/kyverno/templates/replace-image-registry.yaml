@@ -1,0 +1,153 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: replace-image-registry
+  annotations:
+    policies.kyverno.io/title: Replace Image Registry
+    pod-policies.kyverno.io/autogen-controllers: none
+    policies.kyverno.io/category: Sample
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: Pod
+    kyverno.io/kyverno-version: 1.7.2
+    policies.kyverno.io/minversion: 1.6.0
+    kyverno.io/kubernetes-version: "1.23"
+    policies.kyverno.io/description: >-
+      Rather than blocking Pods which come from outside registries,
+      it is also possible to mutate them so the pulls are directed to
+      approved registries. In some cases, those registries may function as
+      pull-through proxies and can fetch the image if not cached.
+      This policy mutates all images either in the form 'image:tag' or
+      'registry.corp.com/image:tag' to be `myregistry.corp.com/`. Any
+      path in the image name will be preserved. Note that this mutates Pods
+      directly and not their controllers. It can be changed if desired but
+      if so may need to not match on Pods.
+spec:
+  background: false
+  rules:
+    - name: replace-image-registry-pod-containers
+      skipBackgroundRequests: true
+      match:
+        any:
+        - resources:
+            kinds:
+            - Pod
+      mutate:
+        foreach:
+        - list: "request.object.spec.containers"
+          patchStrategicMerge:
+            spec:
+              containers:
+              - name: "{{`{{ element.name }}`}}"
+                # Ex: nginx, alpine:3.14, docker.io/nginx
+                image: "{{ printf "{{ regex_replace_all('^(?:docker.io/)?([a-z0-9_-]+)(:([a-z0-9._-]+))?$', '{{element.image}}', '%s.dkr.ecr.%s.amazonaws.com/docker-hub/library/$1$2') }}" .Values.aws.accountId .Values.aws.region}}"
+        - list: "request.object.spec.containers"
+          patchStrategicMerge:
+            spec:
+              containers:
+              - name: "{{`{{ element.name }}`}}"
+                # Ex: akubrinsky/envsubst, docker.io/calico/typha
+                image: "{{ printf "{{ regex_replace_all('^(?:docker.io/)?([a-z0-9_-]+)/([a-z0-9_-]+)(:([a-z0-9._-]+))?$', '{{element.image}}', '%s.dkr.ecr.%s.amazonaws.com/docker-hub/$1/$2$3')}}" .Values.aws.accountId .Values.aws.region }}"
+        - list: "request.object.spec.containers"
+          patchStrategicMerge:
+            spec:
+              containers:
+              - name: "{{`{{ element.name }}`}}"
+                # Ex: cr.fluentbit.io
+                image: "{{ printf "{{ regex_replace_all('^(?:cr.fluentbit.io/)?([a-z0-9_-]+)/([a-z0-9_-]+)(:([a-z0-9._-]+))?$', '{{element.image}}', '%s.dkr.ecr.%s.amazonaws.com/docker-hub/$1/$2$3')}}" .Values.aws.accountId .Values.aws.region }}"
+        - list: request.object.spec.containers
+          patchStrategicMerge:
+            spec:
+              containers:
+                - name: "{{`{{ element.name }}`}}"
+                  image: "{{ printf "{{ regex_replace_all('^(?:quay.io/)?([a-z0-9_-]+)/([a-z0-9_-]+)(:([a-z0-9._-]+))?$', '{{element.image}}', '%s.dkr.ecr.%s.amazonaws.com/quay/$1/$2$3')}}" .Values.aws.accountId .Values.aws.region }}"
+        - list: request.object.spec.containers
+          patchStrategicMerge:
+            spec:
+              containers:
+                - name: "{{`{{ element.name }}`}}"
+                  image: "{{ printf "{{ regex_replace_all('^(?:public.ecr.aws/)?([a-z0-9_-]+)/([a-z0-9_-]+)(:([a-z0-9._-]+))?$', '{{element.image}}', '%s.dkr.ecr.%s.amazonaws.com/ecr-public/$1/$2$3')}}" .Values.aws.accountId .Values.aws.region }}"
+        - list: request.object.spec.containers
+          patchStrategicMerge:
+            spec:
+              containers:
+                - name: "{{`{{ element.name }}`}}"
+                  image: "{{ printf "{{ regex_replace_all('^(?:ghcr.io/)?([a-z0-9_-]+)/([a-z0-9_-]+)(:([a-z0-9._-]+))?$', '{{element.image}}', '%s.dkr.ecr.%s.amazonaws.com/github/$1/$2$3')}}" .Values.aws.accountId .Values.aws.region }}"
+        - list: request.object.spec.containers
+          patchStrategicMerge:
+            spec:
+              containers:
+                - name: "{{`{{ element.name }}`}}"
+                  image: "{{ printf "{{ regex_replace_all('^(?:registry.k8s.io/)?([a-z0-9_-]+)/([a-z0-9_-]+)(:([a-z0-9._-]+))?$', '{{element.image}}', '%s.dkr.ecr.%s.amazonaws.com/k8s/$1/$2$3')}}" .Values.aws.accountId .Values.aws.region }}"
+{{- if hasKey .Values.aws "shared_pullthrough" }}
+        - list: request.object.spec.containers
+          patchStrategicMerge:
+            spec:
+              containers:
+                - name: "{{`{{ element.name }}`}}"
+                  image: "{{ printf "{{ regex_replace_all('^(?:%s.dkr.ecr.%s.amazonaws.com/)?([a-z0-9_-]+)(:([a-z0-9._-]+))?$', '{{element.image}}', '%s.dkr.ecr.%s.amazonaws.com/shared/$1$2')}}" .Values.aws.shared_pullthrough.accountId .Values.aws.shared_pullthrough.region .Values.aws.accountId .Values.aws.region }}"
+{{- end }}
+    - name: replace-image-registry-pod-initcontainers
+      skipBackgroundRequests: true
+      match:
+        any:
+        - resources:
+            kinds:
+            - Pod
+      preconditions:
+        all:
+        - key: "{{ printf "{{ request.object.spec.initContainers[] || `[]` | length(@) }}" }}"
+          operator: GreaterThanOrEquals
+          value: 1
+      mutate:
+        foreach:
+        - list: "request.object.spec.initContainers"
+          patchStrategicMerge:
+            spec:
+              initContainers:
+              - name: "{{`{{ element.name }}`}}"
+                image: "{{ printf "{{ regex_replace_all('^(?:docker.io/)?([a-z0-9_-]+)(:([a-z0-9._-]+))?$', '{{element.image}}', '%s.dkr.ecr.%s.amazonaws.com/docker-hub/library/$1$2') }}" .Values.aws.accountId .Values.aws.region }}"
+        - list: "request.object.spec.initContainers"
+          patchStrategicMerge:
+            spec:
+              initContainers:
+              - name: "{{`{{ element.name }}`}}"
+                image: "{{ printf "{{ regex_replace_all('^(?:docker.io/)?([a-z0-9_-]+)/([a-z0-9_-]+)(:([a-z0-9._-]+))?$', '{{element.image}}', '%s.dkr.ecr.%s.amazonaws.com/docker-hub/$1/$2$3')}}" .Values.aws.accountId .Values.aws.region }}"
+        - list: "request.object.spec.initContainers"
+          patchStrategicMerge:
+            spec:
+              initContainers:
+              - name: "{{`{{ element.name }}`}}"
+                # Ex: cr.fluentbit.io
+                image: "{{ printf "{{ regex_replace_all('^(?:cr.fluentbit.io/)?([a-z0-9_-]+)/([a-z0-9_-]+)(:([a-z0-9._-]+))?$', '{{element.image}}', '%s.dkr.ecr.%s.amazonaws.com/docker-hub/$1/$2$3')}}" .Values.aws.accountId .Values.aws.region }}"
+        - list: request.object.spec.initContainers
+          patchStrategicMerge:
+            spec:
+              initContainers:
+                - name: "{{`{{ element.name }}`}}"
+                  image: "{{ printf "{{ regex_replace_all('^(?:quay.io/)?([a-z0-9_-]+)/([a-z0-9_-]+)(:([a-z0-9._-]+))?$', '{{element.image}}', '%s.dkr.ecr.%s.amazonaws.com/quay/$1/$2$3')}}" .Values.aws.accountId .Values.aws.region }}"
+        - list: request.object.spec.initContainers
+          patchStrategicMerge:
+            spec:
+              initContainers:
+                - name: "{{`{{ element.name }}`}}"
+                  image: "{{ printf "{{ regex_replace_all('^(?:public.ecr.aws/)?([a-z0-9_-]+)/([a-z0-9_-]+)(:([a-z0-9._-]+))?$', '{{element.image}}', '%s.dkr.ecr.%s.amazonaws.com/ecr-public/$1/$2$3')}}" .Values.aws.accountId .Values.aws.region }}"
+        - list: request.object.spec.initContainers
+          patchStrategicMerge:
+            spec:
+              initContainers:
+                - name: "{{`{{ element.name }}`}}"
+                  image: "{{ printf "{{ regex_replace_all('^(?:ghcr.io/)?([a-z0-9_-]+)/([a-z0-9_-]+)(:([a-z0-9._-]+))?$', '{{element.image}}', '%s.dkr.ecr.%s.amazonaws.com/github/$1/$2$3')}}" .Values.aws.accountId .Values.aws.region }}"
+        - list: request.object.spec.initContainers
+          patchStrategicMerge:
+            spec:
+              initContainers:
+                - name: "{{`{{ element.name }}`}}"
+                  image: "{{ printf "{{ regex_replace_all('^(?:registry.k8s.io/)?([a-z0-9_-]+)/([a-z0-9_-]+)(:([a-z0-9._-]+))?$', '{{element.image}}', '%s.dkr.ecr.%s.amazonaws.com/k8s/$1/$2$3')}}" .Values.aws.accountId .Values.aws.region }}"
+{{- if hasKey .Values.aws "shared_pullthrough" }}
+        - list: request.object.spec.initContainers
+          patchStrategicMerge:
+            spec:
+              initContainers:
+                - name: "{{`{{ element.name }}`}}"
+                  image: "{{ printf "{{ regex_replace_all('^(?:%s.dkr.ecr.%s.amazonaws.com/)?([a-z0-9_-]+)(:([a-z0-9._-]+))?$', '{{element.image}}', '%s.dkr.ecr.%s.amazonaws.com/shared/$1$2')}}" .Values.aws.shared_pullthrough.accountId .Values.aws.shared_pullthrough.region .Values.aws.accountId .Values.aws.region }}"
+{{- end }}

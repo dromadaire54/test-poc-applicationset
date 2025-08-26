@@ -1,0 +1,78 @@
+coredns:
+  serviceAccount:
+    create: true
+    name: coredns
+    
+  fullnameOverride: coredns
+  replicaCount: 3
+  
+  hpa:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    metrics:
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 60
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
+          
+  prometheus:
+    service:
+      enabled: true
+    monitor:
+      enabled: true
+      interval: 60s
+
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5
+    successThreshold: 1
+
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5
+    successThreshold: 1
+
+  service:
+    clusterIP: 10.100.0.10
+    annotations:
+      service.kubernetes.io/topology-mode: auto
+      
+  tolerations:
+    - key: tiime.tech/karpenter-managed
+      operator: Exists
+      effect: NoSchedule
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: karpenter.sh/registered
+            operator: DoesNotExist
+
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+            - key: k8s-app
+              operator: In
+              values:
+              - coredns
+          topologyKey: kubernetes.io/hostname
+        weight: 100

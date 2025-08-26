@@ -1,0 +1,12 @@
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: pgbouncer-pdb
+  labels:
+    {{- include "database.pgbouncer.labels" $ | nindent 4}}
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      {{- include "database.pgbouncer.selectorLabels" $ | nindent 6}}
