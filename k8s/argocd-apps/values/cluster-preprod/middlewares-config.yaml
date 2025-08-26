@@ -1,3 +1,0 @@
-middlewares:
-  - name: finops
-    autosync: true

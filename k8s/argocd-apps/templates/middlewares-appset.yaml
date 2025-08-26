@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: demo-appset
+  name: middleware-tiime-finops
   namespace: argocd
 spec:
   goTemplate: true
@@ -13,10 +13,13 @@ spec:
         - git:
             repoURL: https://github.com/dromadaire54/test-poc-applicationset.git
             revision: master
+            directories:
+            - path: ./middlewares/finops/*
+        - git:
+            repoURL: https://github.com/dromadaire54/test-poc-applicationset.git
+            revision: master
             files:
-            - path: argocd-apps/values/cluster-preprod/middlewares-config.yaml
-        - list:
-            elementsYaml: "{{ `{{ .middlewares | toJson }}` }}"
+            - path: ./middlewares/finops/**/config.json
   templatePatch: |
     {{ `
     {{- if .autosync }}
@@ -27,20 +30,20 @@ spec:
     ` }}
   template:
     metadata:
-      name: 'middlewares-tiime-{{ `{{.name}}` }}'
+      name: 'middlewares-tiime-{{ `{{.path.basename}}` }}'
     spec:
       project: 'default'
       syncPolicy:
         syncOptions:
         - CreateNamespace=true
       sources:
-        - path: '/k8s/argocd-apps'
+        - path: '{{ `{{.path.path}}` }}'
           repoURL: 'https://github.com/dromadaire54/test-poc-applicationset.git'
           helm:
             valueFiles:
-              - "values-default-settings.yaml"
-              - "values-middlewares-{{ `{{.name}}` }}.yaml"
-              - "values/cluster-preprod/middlewares/values-middlewares-{{ `{{.name}}` }}.yaml"
+              - "values-prod.yaml"
+              - "secrets://values-prod.yaml"
+            ignoreMissingValueFiles: true
       destination:
         namespace: 'argocd'
         server: 'https://kubernetes.default.svc'
