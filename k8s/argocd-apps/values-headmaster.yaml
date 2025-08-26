@@ -1,19 +1,20 @@
 argocd-template-helm:
-  argo-rollout:
-    appsNameOverride: argo-rollout
-    enabled: false
-    finalizer: false
-    annotations:
-      argocd.argoproj.io/sync-wave: "-5"
-    spec:
-      project: ops
-      source:
-        repoURL: "https://github.com/dromadaire54/test-pos-applicationset.git"
-        path: "./k8s/middlewares/argo-rollout"
-        targetRevision: "main"
-        helm:
-          releaseName: argo-rollout
-      syncPolicy:
-        automatedEnableDefaultConfig: true
-      destination:
-        namespace: argo-rollout
+  argocd-apps:
+    argo-rollout:
+      appsNameOverride: argo-rollout
+      enabled: false
+      finalizer: false
+      annotations:
+        argocd.argoproj.io/sync-wave: "-5"
+      spec:
+        project: ops
+        source:
+          repoURL: "https://github.com/dromadaire54/test-pos-applicationset.git"
+          path: "./k8s/middlewares/argo-rollout"
+          targetRevision: "main"
+          helm:
+            releaseName: argo-rollout
+        syncPolicy:
+          automatedEnableDefaultConfig: true
+        destination:
+          namespace: argo-rollout

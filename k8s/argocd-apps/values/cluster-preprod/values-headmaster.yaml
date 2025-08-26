@@ -1,3 +1,4 @@
 argocd-template-helm:
-  argo-rollout:
-    enabled: true
+  argocd-apps:
+    argo-rollout:
+      enabled: true
