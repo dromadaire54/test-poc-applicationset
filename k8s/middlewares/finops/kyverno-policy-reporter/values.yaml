@@ -17,4 +17,4 @@ policy-reporter:
           cpu: 10m
 
   monitoring:
-    enabled: true
+    enabled: false
