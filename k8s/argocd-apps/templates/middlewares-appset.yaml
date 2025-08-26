@@ -14,12 +14,12 @@ spec:
             repoURL: https://github.com/dromadaire54/test-poc-applicationset.git
             revision: master
             directories:
-            - path: ./k8s/middlewares/finops/*
+            - path: k8s/middlewares/finops/*
         - git:
             repoURL: https://github.com/dromadaire54/test-poc-applicationset.git
             revision: master
             files:
-            - path: ./k8s/middlewares/finops/**/config.json
+            - path: k8s/middlewares/finops/**/config.json
   templatePatch: |
     {{ `
     {{- if .autosync }}
