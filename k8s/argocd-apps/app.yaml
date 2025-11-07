@@ -1,0 +1,61 @@
+---
+# Source: argocd-apps/templates/middlewares-appset-merge.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: middleware-tiime-finops
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+  - merge:
+      generators:
+      - matrix:
+          generators:
+          - git:
+              directories:
+                - path: k8s/middlewares/finops/*
+              repoURL: 'https://github.com/dromadaire54/test-poc-applicationset.git'
+              revision: master
+          - list:
+              elements:
+              - autoSync: true
+      - matrix:
+          generators:
+          - git:
+              files:
+              - path: k8s/middlewares/finops/*/config.json
+              repoURL: 'https://github.com/dromadaire54/test-poc-applicationset.git'
+              revision: master
+          - list:
+              elements:
+              - autoSync: true
+      mergeKeys:
+      - key
+  template:
+    metadata:
+      name: '{{.path.basename}}'
+    spec:
+      project: 'default'
+      syncPolicy:
+        syncOptions:
+        - CreateNamespace=true
+      sources:
+        - path: '{{.path.path}}'
+          repoURL: 'https://github.com/dromadaire54/test-poc-applicationset.git'
+          helm:
+            valueFiles:
+              - "values-prod.yaml"
+            ignoreMissingValueFiles: true
+      destination:
+        namespace: 'argocd'
+        server: 'https://kubernetes.default.svc'
+  templatePatch: |        
+    {{- if .autoSync }}
+    spec:
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+          allowEmpty: true
+    {{- end }}
