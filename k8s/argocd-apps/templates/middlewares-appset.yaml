@@ -11,6 +11,8 @@ spec:
         revision: master
         directories:
         - path: k8s/middlewares/finops/*
+        files:
+        - path: k8s/middlewares/finops/*/config.yaml
   template:
     metadata:
       name: '{{ `{{.path.basename}}` }}'
