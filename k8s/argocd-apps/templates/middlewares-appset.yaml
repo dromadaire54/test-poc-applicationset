@@ -5,14 +5,13 @@ metadata:
   namespace: argocd
 spec:
   goTemplate: true
+  goTemplateOptions: ["missingkey=default"]
   generators:
     - git:
         repoURL: https://github.com/dromadaire54/test-poc-applicationset.git
         revision: master
         directories:
         - path: k8s/middlewares/finops/*
-        files:
-        - path: k8s/middlewares/finops/*/config.yaml
   template:
     metadata:
       name: '{{ `{{.path.basename}}` }}'
@@ -32,7 +31,7 @@ spec:
         namespace: 'argocd'
         server: 'https://kubernetes.default.svc'
   templatePatch: |        
-    {{ `{{- if .autoSync }}` }}
+    {{ `{{- if eq .autoSync "true" }}` }}
     spec:
       syncPolicy:
         automated:
